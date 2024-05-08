@@ -6,13 +6,42 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Hello World!"
+    <Button
+        android:id="@+id/btn_q"
+        android:layout_width="167dp"
+        android:layout_height="57dp"
+        android:layout_marginStart="15dp"
+        android:text="퀘스트"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:layout_editor_absoluteY="545dp" />
+
+    <Button
+        android:id="@+id/btn_m"
+        android:layout_width="167dp"
+        android:layout_height="57dp"
+        android:layout_marginStart="15dp"
+        android:text="경로 추천"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btn_q" />
+
+    <Button
+        android:id="@+id/btn_c"
+        android:layout_width="167dp"
+        android:layout_height="57dp"
+        android:layout_marginEnd="15dp"
+        android:text="커뮤니티"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/btn_w" />
+
+    <Button
+        android:id="@+id/btn_w"
+        android:layout_width="167dp"
+        android:layout_height="57dp"
+        android:layout_marginEnd="15dp"
+        android:text="활동량분석"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:layout_editor_absoluteY="545dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
