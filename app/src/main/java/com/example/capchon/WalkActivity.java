@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.util.Set;
 import java.util.UUID;
 
+
 public class WalkActivity extends AppCompatActivity {
     private BluetoothAdapter bluetoothAdapter;
     private BluetoothSocket bluetoothSocket;
