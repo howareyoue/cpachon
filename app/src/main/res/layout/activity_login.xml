@@ -75,9 +75,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="240dp"
-            android:textAlignment="center"
             android:gravity="center_horizontal"
-            android:text=" @yuulee112"
+            android:textAlignment="center"
             android:textColor="@color/purple_200"
             android:textSize="18dp"
             android:textStyle="bold" />
