@@ -21,7 +21,9 @@ public class WalkActivity extends AppCompatActivity {
     private BluetoothSocket bluetoothSocket;
     private InputStream inputStream;
     private TextView stepsTextView;
+    private TextView caloriesTextView;
     private Button connectButton;
+    private static final double CALORIES_PER_STEP = 0.04; //걸음 당 소모 칼로리
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -30,6 +32,7 @@ public class WalkActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         stepsTextView = findViewById(R.id.stepsTextView);
+        caloriesTextView = findViewById(R.id.caloriesTextView);
         connectButton = findViewById(R.id.connectButton);
 
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -77,9 +80,18 @@ public class WalkActivity extends AppCompatActivity {
         try {
             bytes = inputStream.read(buffer);
             final String readMessage = new String(buffer, 0, bytes);
-            runOnUiThread(() -> stepsTextView.setText("Steps: " + readMessage));
+            final int steps = Integer.parseInt(readMessage.trim());
+            final double calories = calculateCalories(steps);
+            runOnUiThread(() -> {
+                stepsTextView.setText("Steps: " + readMessage);
+                caloriesTextView.setText(String.format("Calories burned: %.2f kcal", calories)); //칼로리 계산 결과 출력
+            });
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private double calculateCalories(int steps) {
+        return steps * CALORIES_PER_STEP;
     }
 }
