@@ -2,9 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"/>
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+    <uses-permission
+        android:name="android.permission.ACCESS_FINE_LOCATION"
         tools:ignore="CoarseFineLocation" />
 
     <application
@@ -15,34 +17,35 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.Capchon"
-        tools:targetApi="31">
+        tools:targetApi="34">
         <activity
-            android:name=".CommunicationActivity"
-            android:exported="false" />
-        <activity
-            android:name=".MapActivity"
-            android:exported="false" />
-        <activity
-            android:name=".WalkActivity"
-            android:exported="false" />
-        <activity
-            android:name=".QuestActivity"
-            android:exported="false" />
-        <activity
-            android:name=".Login"
-            android:configChanges="orientation|keyboardHidden|screenSize"
-            android:exported="true"
-            android:label="@string/title_activity_login"
-            android:theme="@style/Theme.Capchon.Fullscreen">
-        <intent-filter>
-            <action android:name="android.intent.action.MAIN" />
+            android:name=".RegisterActivity"
+            android:exported="true" />
 
-            <category android:name="android.intent.category.LAUNCHER" />
-        </intent-filter>
+        <activity android:name=".loginActivity"
+            android:exported="true"
+            android:label="LoginActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
         </activity>
         <activity
+            android:name=".CommunicationActivity"
+            android:exported="true" />
+        <activity
+            android:name=".MapActivity"
+            android:exported="true" />
+        <activity
+            android:name=".WalkActivity"
+            android:exported="true" />
+        <activity
+            android:name=".QuestActivity"
+            android:exported="true" />
+        <activity
             android:name=".MainActivity"
-            android:exported="false">
+            android:exported="true">
         </activity>
     </application>
 
