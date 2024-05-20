@@ -23,7 +23,7 @@ public class WalkActivity extends AppCompatActivity {
     private TextView stepsTextView;
     private TextView caloriesTextView;
     private Button connectButton;
-    private static final double CALORIES_PER_STEP = 0.04;
+    private static final double CALORIES_PER_STEP = 0.04; //걸음 당 소모 칼로리
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -84,7 +84,7 @@ public class WalkActivity extends AppCompatActivity {
             final double calories = calculateCalories(steps);
             runOnUiThread(() -> {
                 stepsTextView.setText("Steps: " + readMessage);
-                caloriesTextView.setText(String.format("Calories burned: %.2f kcal", calories));
+                caloriesTextView.setText(String.format("Calories burned: %.2f kcal", calories)); //칼로리 계산 결과 출력
             });
         } catch (IOException e) {
             e.printStackTrace();
