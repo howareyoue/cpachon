@@ -14,4 +14,9 @@
     <color name="light_blue_900">#01579B</color>
     <color name="light_blue_A400">#00B0FF</color>
     <color name="black_overlay">#66000000</color>
+    <color name="background_color">#F5F5F5</color>
+    <color name="text_color">#333333</color>
+    <color name="hint_color">#888888</color>
+    <color name="button_text_color">#FFFFFF</color>
+    <color name="button_background_color">#6200EE</color>
 </resources>

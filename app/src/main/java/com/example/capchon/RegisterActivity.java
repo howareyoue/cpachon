@@ -21,8 +21,8 @@ import com.google.firebase.database.FirebaseDatabase;
 
 public class RegisterActivity extends AppCompatActivity {
     private FirebaseAuth mFirebaseAuth; //파이어베이스 인증
-    private DatabaseReference mDatabaseRef ; //실시간데이터베이스
-    private EditText mEtmail,mEtPwd, mEtname, mEtrank, mEtnumber,mEtcompany;
+    private DatabaseReference mDatabaseRef; //실시간데이터베이스
+    private EditText mEtmail, mEtPwd, mEtName, mEtDogName, mEtDogBreed, mEtDogAge;
     private Button mBtnregister;
 
     @SuppressLint("MissingInflatedId")
@@ -35,9 +35,10 @@ public class RegisterActivity extends AppCompatActivity {
         mDatabaseRef = FirebaseDatabase.getInstance().getReference();
         mEtmail = findViewById(R.id.et_email);
         mEtPwd = findViewById(R.id.et_pwd);
-        mEtname = findViewById(R.id.et_name);
-        mEtnumber = findViewById(R.id.et_number);
-        mEtcompany= findViewById(R.id.et_companyname);
+        mEtName = findViewById(R.id.et_name);
+        mEtDogName = findViewById(R.id.et_dog_name);
+        mEtDogBreed = findViewById(R.id.et_dog_breed);
+        mEtDogAge = findViewById(R.id.et_dog_age);
 
         mBtnregister = findViewById(R.id.btn_register);
 
@@ -46,40 +47,38 @@ public class RegisterActivity extends AppCompatActivity {
             public void onClick(View view) {
                 String strEmail = mEtmail.getText().toString();
                 String strPwd = mEtPwd.getText().toString();
-                String strName = mEtname.getText().toString();
-                String strNumber = mEtnumber.getText().toString();
-                String strCompany = mEtcompany.getText().toString();
+                String strName = mEtName.getText().toString();
+                String strDogName = mEtDogName.getText().toString();
+                String strDogBreed = mEtDogBreed.getText().toString();
+                String strDogAge = mEtDogAge.getText().toString();
 
-                //firebaseAuth 진행
-                mFirebaseAuth.createUserWithEmailAndPassword(strEmail,strPwd).addOnCompleteListener(RegisterActivity.this, new OnCompleteListener<AuthResult>() {
+                // FirebaseAuth 진행
+                mFirebaseAuth.createUserWithEmailAndPassword(strEmail, strPwd).addOnCompleteListener(RegisterActivity.this, new OnCompleteListener<AuthResult>() {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
-                        if (task.isSuccessful()){
+                        if (task.isSuccessful()) {
                             FirebaseUser firebaseUser = mFirebaseAuth.getCurrentUser();
                             UserAccount account = new UserAccount();
                             account.setIdToken(firebaseUser.getUid());
                             account.setEmailId(firebaseUser.getEmail());
                             account.setPassword(strPwd);
                             account.setName(strName);
-                            account.setNumber(strNumber);
-                            //account.setCompanyname(strCompany);
+                            account.setDogName(strDogName);
+                            account.setDogBreed(strDogBreed);
+                            account.setDogAge(strDogAge);
 
-                            //setValue : 데이터베이스에 삽입행위
+                            // setValue: 데이터베이스에 삽입행위
                             mDatabaseRef.child("UserAccount").child(firebaseUser.getUid()).setValue(account);
 
                             Toast.makeText(RegisterActivity.this, "회원가입에 성공하셨습니다.", Toast.LENGTH_SHORT).show();
                             Intent intent = new Intent(RegisterActivity.this, loginActivity.class);
                             startActivity(intent);
-
-                        }
-                        else {
+                        } else {
                             Toast.makeText(RegisterActivity.this, "회원가입에 실패하셨습니다.", Toast.LENGTH_SHORT).show();
                         }
                     }
                 });
-
             }
         });
-
     }
 }
