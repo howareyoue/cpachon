@@ -26,6 +26,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(getApplicationContext(), QuestActivity.class);
+                startActivity(intent);
             }
         });
         Button btn_w = findViewById(R.id.btn_w);
@@ -33,13 +34,14 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(getApplicationContext(), WalkActivity.class);
+                startActivity(intent);
             }
         });
 //        Button btn_m = findViewById(R.id.btn_m);
 //        btn_m.setOnClickListener(new View.OnClickListener() {
 //            @Override
 //            public void onClick(View view) {
-//                Intent intent = new Intent(getApplicationContext(), MapActivity.class);
+//                Intent intent = new Intent(getApplicationContext(), MapActivity.class);startActivity(intent);
 //            }
 //        });
         Button btn_c = findViewById(R.id.btn_c);
@@ -47,6 +49,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(getApplicationContext(), CommunicationActivity.class);
+                startActivity(intent);
             }
         });
     }
