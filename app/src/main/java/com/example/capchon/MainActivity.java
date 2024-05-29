@@ -35,13 +35,13 @@ public class MainActivity extends AppCompatActivity {
                 Intent intent = new Intent(getApplicationContext(), WalkActivity.class);
             }
         });
-        Button btn_m = findViewById(R.id.btn_m);
-        btn_m.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(getApplicationContext(), MapActivity.class);
-            }
-        });
+//        Button btn_m = findViewById(R.id.btn_m);
+//        btn_m.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                Intent intent = new Intent(getApplicationContext(), MapActivity.class);
+//            }
+//        });
         Button btn_c = findViewById(R.id.btn_c);
         btn_c.setOnClickListener(new View.OnClickListener() {
             @Override
