@@ -6,4 +6,13 @@
     android:layout_height="match_parent"
     tools:context=".QuestActivity">
 
+    <Button
+        android:id="@+id/btn_cam"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:text="Camera"
+        tools:layout_editor_absoluteX="120dp"
+        tools:layout_editor_absoluteY="449dp" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
