@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.naver.maps.map.MapView
+        android:id="@+id/map_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:ignore="MissingClass"/>
+
+    <EditText
+        android:id="@+id/et_destination"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:hint="Enter destination"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="16dp"
+        android:background="@android:drawable/editbox_background" />
+
+    <Button
+        android:id="@+id/btn_recommend_route"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Recommend Route"
+        android:layout_below="@id/et_destination"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="16dp"/>
+
+    <Button
+        android:id="@+id/btn_return_to_current_location"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Return to Current Location"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="16dp"/>
+
+</RelativeLayout>
