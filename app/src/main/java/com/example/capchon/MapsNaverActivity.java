@@ -44,15 +44,15 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1000;
     private static final String TAG = "MapsNaverActivity";
     private static final String BASE_URL = "https://naveropenapi.apigw.ntruss.com";
-    private static final String CLIENT_ID = "YOUR_REAL_CLIENT_ID"; // 여기에 본인의 Client ID 입력
-    private static final String CLIENT_SECRET = "YOUR_REAL_CLIENT_SECRET"; // 여기에 본인의 Client Secret 입력
+    private static final String CLIENT_ID = "u6nzkkp800"; // 여기에 본인의 Client ID 입력
+    private static final String CLIENT_SECRET = "pTQBJXJxzwgiafqynJnFv3kWloFQKTdBUjkFukt1"; // 여기에 본인의 Client Secret 입력
 
     private MapView mapView;
     private NaverMap naverMap;
     private LocationSource locationSource;
     private Button btnRecommendRoute;
     private Button btnReturnToCurrentLocation;
-    private EditText etDestination;
+    private EditText etWalkDuration;
     private Marker currentLocationMarker;
     private LatLng currentLatLng;
 
@@ -64,9 +64,9 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
         setContentView(R.layout.activity_maps_naver);
 
         mapView = findViewById(R.id.map_view);
-        etDestination = findViewById(R.id.et_destination);
         btnRecommendRoute = findViewById(R.id.btn_recommend_route);
         btnReturnToCurrentLocation = findViewById(R.id.btn_return_to_current_location);
+        etWalkDuration = findViewById(R.id.et_walk_duration);
         mapView.getMapAsync(this);
 
         locationSource = new FusedLocationSource(this, LOCATION_PERMISSION_REQUEST_CODE);
@@ -88,11 +88,12 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
 
         btnRecommendRoute.setOnClickListener(v -> {
             if (naverMap != null && currentLatLng != null) {
-                String destination = etDestination.getText().toString();
-                if (!destination.isEmpty()) {
-                    recommendWalkingRoute(destination);
+                String durationStr = etWalkDuration.getText().toString();
+                if (!durationStr.isEmpty()) {
+                    int duration = Integer.parseInt(durationStr);
+                    recommendWalkingRoute(duration);
                 } else {
-                    Toast.makeText(this, "Please enter a destination.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "산책 시간을 입력하세요", Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -156,7 +157,7 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
                                     naverMap.moveCamera(com.naver.maps.map.CameraUpdate.scrollTo(currentLatLng));
                                 } else {
                                     // Handle invalid coordinates
-                                    Toast.makeText(MapsNaverActivity.this, "Invalid location coordinates", Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(MapsNaverActivity.this, "위치를 찾을수 없습니다.", Toast.LENGTH_SHORT).show();
                                 }
                             }
                         }
@@ -166,65 +167,31 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
         }
     }
 
-    private void recommendWalkingRoute(String destination) {
+    private void recommendWalkingRoute(int durationMinutes) {
         if (currentLatLng != null) {
-            // 여기에서 도착지 주소를 지오코딩하여 위도와 경도로 변환하는 로직이 필요합니다.
-            // 예를 들어, 도착지를 좌표로 변환하는 API를 사용합니다.
-            LatLng destinationLatLng = getLatLngFromAddress(destination);
-            if (destinationLatLng == null) {
-                Toast.makeText(this, "Invalid destination address.", Toast.LENGTH_SHORT).show();
-                return;
+            // 도착지 없이 사용자가 지정한 시간 동안 산책할 경로를 계산하는 로직
+            // 여기에서는 단순히 현재 위치에서 시작하여 몇몇 포인트를 순회하는 방식으로 구현합니다.
+
+            int numPoints = durationMinutes / 10;
+            List<LatLng> path = new ArrayList<>();
+            path.add(currentLatLng);
+
+            for (int i = 1; i <= numPoints; i++) {
+                double newLatitude = currentLatLng.latitude + (0.005 * i);
+                double newLongitude = currentLatLng.longitude + (0.005 * (i % 2 == 0 ? 1 : -1));
+                path.add(new LatLng(newLatitude, newLongitude));
             }
 
-            String start = currentLatLng.longitude + "," + currentLatLng.latitude;
-            String goal = destinationLatLng.longitude + "," + destinationLatLng.latitude;
+            path.add(currentLatLng); // 다시 출발지로
 
-            directionsService.getDrivingRoute(CLIENT_ID, CLIENT_SECRET, start, goal, "trafast")
-                    .enqueue(new Callback<DirectionsResponse>() {
-                        @Override
-                        public void onResponse(Call<DirectionsResponse> call, Response<DirectionsResponse> response) {
-                            if (response.isSuccessful() && response.body() != null) {
-                                DirectionsResponse directionsResponse = response.body();
-                                List<LatLng> path = new ArrayList<>();
-                                for (List<Double> coord : directionsResponse.route.traoptimal.get(0).path) {
-                                    path.add(new LatLng(coord.get(1), coord.get(0)));
-                                }
+            PolylineOverlay polyline = new PolylineOverlay();
+            polyline.setCoords(path);
+            polyline.setMap(naverMap);
 
-                                PolylineOverlay polyline = new PolylineOverlay();
-                                polyline.setCoords(path);
-                                polyline.setMap(naverMap);
-
-                                Toast.makeText(MapsNaverActivity.this, "경로를 추천합니다.", Toast.LENGTH_SHORT).show();
-                            } else {
-                                try {
-                                    String errorBody = response.errorBody().string();
-                                    Toast.makeText(MapsNaverActivity.this, "경로를 가져오는 데 실패했습니다: " + errorBody, Toast.LENGTH_LONG).show();
-                                    Log.e(TAG, "경로 응답 실패: " + errorBody);
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                    Toast.makeText(MapsNaverActivity.this, "경로를 가져오는 데 실패했습니다.", Toast.LENGTH_SHORT).show();
-                                    Log.e(TAG, "경로 응답 실패", e);
-                                }
-                            }
-                        }
-
-                        @Override
-                        public void onFailure(Call<DirectionsResponse> call, Throwable t) {
-                            Toast.makeText(MapsNaverActivity.this, "경로 요청 실패: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-                            Log.e(TAG, "경로 요청 실패", t);
-                        }
-                    });
+            Toast.makeText(this, durationMinutes + "분 산책 경로를 추천합니다.", Toast.LENGTH_SHORT).show();
         } else {
             Toast.makeText(this, "현재 위치를 가져올 수 없습니다.", Toast.LENGTH_SHORT).show();
         }
-    }
-
-    // 도착지 주소를 지오코딩하여 LatLng로 변환하는 메서드 (구현 필요)
-    private LatLng getLatLngFromAddress(String address) {
-        // 실제 구현에서는 지오코딩 API를 호출하여 주소를 LatLng로 변환합니다.
-        // 여기서는 예시로 단순히 null을 반환합니다.
-        // 네이버 지도 API의 지오코딩 서비스를 사용할 수 있습니다.
-        return null;
     }
 
     @Override

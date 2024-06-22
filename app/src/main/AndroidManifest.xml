@@ -26,7 +26,7 @@
         android:theme="@style/Theme.Capchon"
         tools:targetApi="34">
         <activity
-            android:name=".MapNaverActivity"
+            android:name=".MapsNaverActivity"
             android:exported="false" />
         <activity
             android:name=".RegisterActivity"

@@ -1,43 +1,31 @@
-<?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
     <com.naver.maps.map.MapView
         android:id="@+id/map_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:ignore="MissingClass"/>
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 
     <EditText
-        android:id="@+id/et_destination"
-        android:layout_width="wrap_content"
+        android:id="@+id/et_walk_duration"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Enter destination"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="16dp"
-        android:background="@android:drawable/editbox_background" />
+        android:hint="산책한 시간을 입려해주세요(분 단위)"
+        android:inputType="number" />
 
     <Button
         android:id="@+id/btn_recommend_route"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Recommend Route"
-        android:layout_below="@id/et_destination"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="16dp"/>
+        android:text="코스 추천" />
 
     <Button
         android:id="@+id/btn_return_to_current_location"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Return to Current Location"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="16dp"/>
-
-</RelativeLayout>
+        android:text="현재위치 돌아오기" />
+</LinearLayout>
