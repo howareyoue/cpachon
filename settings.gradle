@@ -10,7 +10,11 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven{
+            url 'https://repository.map.naver.com/archive/maven'
+        }
     }
 }
+
 rootProject.name = "capchon"
 include ':app'

@@ -42,7 +42,7 @@ public class loginActivity extends AppCompatActivity {
 
                 mFirebaseAuth.signInWithEmailAndPassword(strEmail, strPwd).addOnCompleteListener(loginActivity.this, new OnCompleteListener<AuthResult>() {
                     @Override
-                    public void onComplete(@NonNull Task<AuthResult> task) {
+                    public void onComplete(Task task) {
                         if(task.isSuccessful()){
                             Intent intent = new Intent(loginActivity.this,MainActivity.class);
                             startActivity(intent);

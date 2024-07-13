@@ -1,12 +1,14 @@
 package com.example.capchon;
 
-public class UserAccount
-{
-    private String emailId;// 이메일 아이디
-    private String password; // 비밀번호
-    private String idToken; //Firebase Uid(고유 토큰정보)
-    private  String name; //이름
-    private String number; //전화번호
+public class UserAccount {
+    private String idToken; // Firebase Uid
+    private String emailId;
+    private String password;
+    private String name;
+    private String dogName;
+    private String dogBreed;
+    private String dogAge;
+
     public UserAccount() { }
 
     public String getIdToken() {
@@ -41,11 +43,27 @@ public class UserAccount
         this.name = name;
     }
 
-    public String getNumber() {
-        return number;
+    public String getDogName() {
+        return dogName;
     }
 
-    public void setNumber(String number) {
-        this.number = number;
+    public void setDogName(String dogName) {
+        this.dogName = dogName;
+    }
+
+    public String getDogBreed() {
+        return dogBreed;
+    }
+
+    public void setDogBreed(String dogBreed) {
+        this.dogBreed = dogBreed;
+    }
+
+    public String getDogAge() {
+        return dogAge;
+    }
+
+    public void setDogAge(String dogAge) {
+        this.dogAge = dogAge;
     }
 }
