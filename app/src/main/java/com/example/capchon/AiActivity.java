@@ -99,28 +99,38 @@ public class AiActivity extends AppCompatActivity {
             TensorBuffer outputFeature0 = outputs.getOutputFeature0AsTensorBuffer();
 
             float[] confidences = outputFeature0.getFloatArray();
-            // find the index of the class with the biggest confidence.
-            int maxPos = 0;
-            float maxConfidence = 0;
-            for (int i = 0; i < confidences.length; i++) {
-                if (confidences[i] > maxConfidence) {
-                    maxConfidence = confidences[i];
-                    maxPos = i;
-                }
-            }
-            String[] classes = {"NOGarbage", "YESGarbage"};
-            result.setText(classes[maxPos]);
 
-            String s = "";
-            for (int i = 0; i < classes.length; i++) {
-                s += String.format("%s: %.1f%%\n", classes[i], confidences[i] * 100);
+            if (confidences.length == 10) {
+                String[] classes = new String[]{"Garbage_CigaretteButt", "Garbage_CoffeeCup", "Garbage_PlasticBag", "Garbage_Plastic", "Action_Lying+Sitting", "Action_Hand", "Action_FailedAction", "Object_MNU", "Object_Fountain", "Object_EngineeringBuilding4"};
+
+                // find the index of the class with the biggest confidence.
+                int maxPos = 0;
+                float maxConfidence = 0;
+                for (int i = 0; i < confidences.length; i++) {
+                    if (confidences[i] > maxConfidence) {
+                        maxConfidence = confidences[i];
+                        maxPos = i;
+                    }
+                }
+
+                result.setText("성공: " + classes[maxPos]);
+
+                StringBuilder s = new StringBuilder();
+                for (int i = 0; i < classes.length; i++) {
+                    s.append(String.format("%s: %.1f%%\n", classes[i], confidences[i] * 100));
+                }
+                confidence.setText(s.toString());
+            } else {
+                result.setText("실패");
+                confidence.setText("");
             }
-            confidence.setText(s);
 
             // Releases model resources if no longer used.
             model.close();
-        } catch (IOException e) {
+        } catch (IOException | IllegalStateException e) {
             Log.e(TAG, "Error classifying image", e);
+            result.setText("실패");
+            confidence.setText("");
         }
     }
 
