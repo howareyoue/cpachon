@@ -50,20 +50,17 @@ public class AiActivity extends AppCompatActivity {
         imageView = findViewById(R.id.imageView);
         picture = findViewById(R.id.button);
 
-        picture.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Log.d(TAG, "Take Picture button clicked");
-                // Launch camera if we have permission
-                if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-                    Log.d(TAG, "Camera permission granted");
-                    Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                    startActivityForResult(cameraIntent, 1);
-                } else {
-                    Log.d(TAG, "Requesting camera permission");
-                    // Request camera permission if we don't have it
-                    requestPermissions(new String[]{Manifest.permission.CAMERA}, 100);
-                }
+        picture.setOnClickListener(view -> {
+            Log.d(TAG, "Take Picture button clicked");
+            // Launch camera if we have permission
+            if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                Log.d(TAG, "Camera permission granted");
+                Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                startActivityForResult(cameraIntent, 1);
+            } else {
+                Log.d(TAG, "Requesting camera permission");
+                // Request camera permission if we don't have it
+                requestPermissions(new String[]{Manifest.permission.CAMERA}, 100);
             }
         });
     }
@@ -139,13 +136,23 @@ public class AiActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 1 && resultCode == RESULT_OK) {
             Log.d(TAG, "Image captured");
-            Bitmap image = (Bitmap) data.getExtras().get("data");
-            int dimension = Math.min(image.getWidth(), image.getHeight());
-            image = ThumbnailUtils.extractThumbnail(image, dimension, dimension);
-            imageView.setImageBitmap(image);
+            if (data != null && data.getExtras() != null) {
+                Bitmap image = (Bitmap) data.getExtras().get("data");
+                if (image != null) {
+                    int dimension = Math.min(image.getWidth(), image.getHeight());
+                    image = ThumbnailUtils.extractThumbnail(image, dimension, dimension);
+                    imageView.setImageBitmap(image);
 
-            image = Bitmap.createScaledBitmap(image, imageSize, imageSize, false);
-            classifyImage(image);
+                    image = Bitmap.createScaledBitmap(image, imageSize, imageSize, false);
+                    classifyImage(image);
+                } else {
+                    Log.e(TAG, "Image data is null");
+                    result.setText("failure");
+                }
+            } else {
+                Log.e(TAG, "Intent data or extras are null");
+                result.setText("failure");
+            }
         }
     }
 
