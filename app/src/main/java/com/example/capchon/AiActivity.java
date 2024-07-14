@@ -113,7 +113,7 @@ public class AiActivity extends AppCompatActivity {
                     }
                 }
 
-                result.setText("성공: " + classes[maxPos]);
+                result.setText("success");
 
                 StringBuilder s = new StringBuilder();
                 for (int i = 0; i < classes.length; i++) {
@@ -121,7 +121,7 @@ public class AiActivity extends AppCompatActivity {
                 }
                 confidence.setText(s.toString());
             } else {
-                result.setText("실패");
+                result.setText("failure");
                 confidence.setText("");
             }
 
@@ -129,7 +129,7 @@ public class AiActivity extends AppCompatActivity {
             model.close();
         } catch (IOException | IllegalStateException e) {
             Log.e(TAG, "Error classifying image", e);
-            result.setText("실패");
+            result.setText("failure");
             confidence.setText("");
         }
     }
