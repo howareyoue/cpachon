@@ -7,20 +7,19 @@ public class DirectionsResponse {
     @SerializedName("route")
     public Route route;
 
-
     public static class Route {
         @SerializedName("traoptimal")
         public List<Traoptimal> traoptimal;
     }
 
     public static class Traoptimal {
-        @SerializedName("traoptimalSummary")
-        public TraoptimalSummary summary;
+        @SerializedName("summary")
+        public Summary summary;
         @SerializedName("path")
         public List<List<Double>> path;
     }
 
-    public static class TraoptimalSummary {
+    public static class Summary {
         @SerializedName("start")
         public Coord start;
         @SerializedName("goal")

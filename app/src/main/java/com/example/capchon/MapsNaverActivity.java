@@ -56,6 +56,8 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
     private Marker currentLocationMarker;
     private LatLng currentLatLng;
 
+    private PolylineOverlay polyline; // 경로 표시를 위한 PolylineOverlay 객체
+
     private NaverDirectionsService directionsService;
 
     @Override
@@ -105,6 +107,8 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
                 Toast.makeText(this, "현재 위치를 가져올 수 없습니다.", Toast.LENGTH_SHORT).show();
             }
         });
+
+        polyline = new PolylineOverlay(); // PolylineOverlay 객체 초기화
     }
 
     @Override
@@ -169,30 +173,51 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
 
     private void recommendWalkingRoute(int durationMinutes) {
         if (currentLatLng != null) {
-            // 도착지 없이 사용자가 지정한 시간 동안 산책할 경로를 계산하는 로직
-            // 여기에서는 단순히 현재 위치에서 시작하여 몇몇 포인트를 순회하는 방식으로 구현합니다.
+            String start = currentLatLng.longitude + "," + currentLatLng.latitude;
+            // 목표 지점을 현재 위치로부터 일정 거리의 위치로 설정 (예: 1km)
+            LatLng goalLatLng = new LatLng(currentLatLng.latitude + 0.01, currentLatLng.longitude + 0.01);
+            String goal = goalLatLng.longitude + "," + goalLatLng.latitude;
 
-            int numPoints = durationMinutes / 10;
-            List<LatLng> path = new ArrayList<>();
-            path.add(currentLatLng);
+            Call<DirectionsResponse> call = directionsService.getWalkingRoute(CLIENT_ID, CLIENT_SECRET, start, goal, "traoptimal");
 
-            for (int i = 1; i <= numPoints; i++) {
-                double newLatitude = currentLatLng.latitude + (0.005 * i);
-                double newLongitude = currentLatLng.longitude + (0.005 * (i % 2 == 0 ? 1 : -1));
-                path.add(new LatLng(newLatitude, newLongitude));
-            }
+            call.enqueue(new Callback<DirectionsResponse>() {
+                @Override
+                public void onResponse(Call<DirectionsResponse> call, Response<DirectionsResponse> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        DirectionsResponse directionsResponse = response.body();
+                        List<DirectionsResponse.Traoptimal> routes = directionsResponse.route.traoptimal;
+                        if (!routes.isEmpty()) {
+                            List<LatLng> path = new ArrayList<>();
+                            for (List<Double> point : routes.get(0).path) {
+                                path.add(new LatLng(point.get(1), point.get(0)));
+                            }
 
-            path.add(currentLatLng); // 다시 출발지로
+                            // 기존 경로 지우기
+                            polyline.setMap(null);
 
-            PolylineOverlay polyline = new PolylineOverlay();
-            polyline.setCoords(path);
-            polyline.setMap(naverMap);
+                            // 새로운 경로 설정
+                            polyline.setCoords(path);
+                            polyline.setMap(naverMap);
 
-            Toast.makeText(this, durationMinutes + "분 산책 경로를 추천합니다.", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(MapsNaverActivity.this, durationMinutes + "분 산책 경로를 추천합니다.", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(MapsNaverActivity.this, "경로를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
+                        }
+                    } else {
+                        Toast.makeText(MapsNaverActivity.this, "경로 요청 실패: " + response.message(), Toast.LENGTH_SHORT).show();
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<DirectionsResponse> call, Throwable t) {
+                    Toast.makeText(MapsNaverActivity.this, "경로 요청 실패: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            });
         } else {
             Toast.makeText(this, "현재 위치를 가져올 수 없습니다.", Toast.LENGTH_SHORT).show();
         }
     }
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {

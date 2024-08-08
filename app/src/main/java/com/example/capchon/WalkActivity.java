@@ -36,7 +36,7 @@ public class WalkActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_walk);
 
         stepsTextView = findViewById(R.id.stepsTextView);
         caloriesTextView = findViewById(R.id.caloriesTextView);
