@@ -39,12 +39,15 @@ public class CommunicationActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_communication);
+
         list = findViewById(R.id.list);
         floatingActionButton = findViewById(R.id.Post_floating);
         searchEditText = findViewById(R.id.searchEditText);
 
         communicationList = new ArrayList<>();
         filteredList = new ArrayList<>();
+
+        // Adapter 설정
         adapter = new ArrayAdapter<CommunicationInfo>(this, R.layout.communication_list_item, filteredList) {
             @NonNull
             @Override
@@ -68,42 +71,25 @@ public class CommunicationActivity extends AppCompatActivity {
         };
         list.setAdapter(adapter);
 
-        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference("communication");
+        // Firebase 데이터 로드
+        loadCommunicationData();
 
+        // 아이템 클릭 시 상세 화면으로 이동
         // 아이템 클릭 시 상세 화면으로 이동
         list.setOnItemClickListener((adapterView, view, position, id) -> {
             CommunicationInfo selectedCommunication = filteredList.get(position);
             Intent detailIntent = new Intent(CommunicationActivity.this, PostdetailActivity.class);
-            detailIntent.putExtra("title", selectedCommunication.getTitle());
-            detailIntent.putExtra("contents", selectedCommunication.getContents());
+            detailIntent.putExtra("Title", selectedCommunication.getTitle()); // 제목 전달
+            detailIntent.putExtra("Contents", selectedCommunication.getContents()); // 내용 전달
+            detailIntent.putExtra("postId", selectedCommunication.getId()); // ID 추가
             startActivity(detailIntent);
         });
+
 
         // 글 작성 화면으로 이동
         floatingActionButton.setOnClickListener(view -> {
             Intent intent = new Intent(CommunicationActivity.this, PostActivity.class);
             startActivityForResult(intent, POST_ACTIVITY_REQUEST_CODE);
-        });
-
-        // Firebase에서 데이터 로드
-        databaseReference.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                communicationList.clear();
-                for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                    CommunicationInfo communicationInfo = snapshot.getValue(CommunicationInfo.class);
-                    if (communicationInfo != null) {
-                        communicationList.add(communicationInfo);
-                    }
-                }
-                // 모든 데이터를 불러온 후, 필터 리스트도 초기화
-                updateFilteredList();
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-                // 오류 처리 코드 추가
-            }
         });
 
         // 검색 필터 기능 구현
@@ -119,6 +105,40 @@ public class CommunicationActivity extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(Editable editable) {
+            }
+        });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == POST_ACTIVITY_REQUEST_CODE && resultCode == RESULT_OK) {
+            // Firebase에서 다시 데이터를 로드
+            loadCommunicationData();
+        }
+    }
+
+    // Firebase 데이터 로드 메서드
+    private void loadCommunicationData() {
+        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference("CommunicationInfo");
+        databaseReference.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                communicationList.clear();
+                for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                    CommunicationInfo communicationInfo = snapshot.getValue(CommunicationInfo.class);
+                    if (communicationInfo != null) {
+                        String id = snapshot.getKey(); // Firebase의 자동 생성 ID
+                        communicationInfo.setId(id); // ID 설정
+                        communicationList.add(communicationInfo);
+                    }
+                }
+                updateFilteredList();  // 필터링된 리스트 업데이트
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                // 오류 처리
             }
         });
     }

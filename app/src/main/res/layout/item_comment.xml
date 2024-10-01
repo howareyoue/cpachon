@@ -6,16 +6,19 @@
     android:padding="8dp">
 
     <TextView
-        android:id="@+id/comment_username"
+        android:id="@+id/usernameTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:text="Username"
+        android:textSize="16sp"
         android:textStyle="bold"
-        android:text="닉네임" />
+        android:padding="4dp" />
 
     <TextView
-        android:id="@+id/comment_text"
-        android:layout_width="match_parent"
+        android:id="@+id/commentTextView"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="댓글 내용"
-        android:paddingTop="4dp"/>
+        android:text="Comment"
+        android:textSize="14sp"
+        android:padding="4dp" />
 </LinearLayout>

@@ -58,12 +58,9 @@ public class PostActivity extends AppCompatActivity {
         String key = databaseReference.push().getKey();  // Firebase에 새로운 키 생성
         databaseReference.child(key).setValue(communicationInfo);
 
-        // PostdetailActivity로 데이터 전달 및 전환
-        Intent intent = new Intent(PostActivity.this, PostdetailActivity.class);
-        intent.putExtra("title", title);  // Key는 통일하여 소문자 사용
-        intent.putExtra("contents", contents);  // Key는 통일하여 소문자 사용
-        startActivity(intent);  // PostdetailActivity로 이동
-
-        // 액티비티 종료 코드가 없으므로 PostActivity가 유지됨
+        // PostActivity 종료하고 결과 전달
+        Intent intent = new Intent();
+        setResult(RESULT_OK, intent);
+        finish();  // PostActivity 종료
     }
 }

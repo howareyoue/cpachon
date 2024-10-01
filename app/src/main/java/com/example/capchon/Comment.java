@@ -1,23 +1,22 @@
 package com.example.capchon;
 
 public class Comment {
-    public String username;
-    public String comment;
+    private String username;
+    private String commentText;
 
-    public  Comment() {
+    // Firebase에 데이터를 저장하기 위해 기본 생성자가 필요합니다.
+    public Comment() {}
 
-    }
-
-    public Comment(String username, String comment) {
+    public Comment(String username, String commentText) {
         this.username = username;
-        this.comment = comment;
+        this.commentText = commentText;
     }
 
     public String getUsername() {
         return username;
     }
 
-    public String getComment() {
-        return comment;
+    public String getCommentText() {
+        return commentText;
     }
 }

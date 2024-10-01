@@ -8,27 +8,25 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
-public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentViewHolder> {
+public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.ViewHolder> {
     private List<Comment> commentList;
 
-    // 생성자에서 매개변수 이름 수정
     public CommentAdapter(List<Comment> commentList) {
         this.commentList = commentList;
     }
 
     @NonNull
     @Override
-    public CommentViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_comment, parent, false);
-        return new CommentViewHolder(view);
+        return new ViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull CommentViewHolder holder, int position) {
-        // 중괄호 추가
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Comment comment = commentList.get(position);
         holder.usernameTextView.setText(comment.getUsername());
-        holder.commentTextView.setText(comment.getComment());
+        holder.commentTextView.setText(comment.getCommentText());
     }
 
     @Override
@@ -36,15 +34,14 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
         return commentList.size();
     }
 
-    public static class CommentViewHolder extends RecyclerView.ViewHolder {
-        public TextView usernameTextView;
-        public TextView commentTextView;
+    public static class ViewHolder extends RecyclerView.ViewHolder {
+        TextView usernameTextView;
+        TextView commentTextView;
 
-        // 오타 수정 (intemView -> itemView)
-        public CommentViewHolder(View itemView) {
+        public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            usernameTextView = itemView.findViewById(R.id.comment_username);
-            commentTextView = itemView.findViewById(R.id.comment_text);
+            usernameTextView = itemView.findViewById(R.id.usernameTextView);
+            commentTextView = itemView.findViewById(R.id.commentTextView);
         }
     }
 }
