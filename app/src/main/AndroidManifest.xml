@@ -25,6 +25,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Capchon"
         tools:targetApi="34">
+
+        <meta-data
+            android:name="com.naver.maps.map.CLIENT_ID"
+            android:value="u6nzkkp800"/>
+
+
         <activity
             android:name=".MapsNaverActivity"
             android:exported="false" />

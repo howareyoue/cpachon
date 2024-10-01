@@ -1,18 +1,39 @@
-<?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".QuestActivity">
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:gravity="center">
+
+    <TextView
+        android:id="@+id/quest1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="퀘스트 1"
+        android:textSize="18sp"
+        android:paddingBottom="8dp" />
+
+    <TextView
+        android:id="@+id/quest2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="퀘스트 2"
+        android:textSize="18sp"
+        android:paddingBottom="8dp" />
+
+    <TextView
+        android:id="@+id/quest3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="퀘스트 3"
+        android:textSize="18sp"
+        android:paddingBottom="16dp" />
 
     <Button
         android:id="@+id/btn_cam"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:text="Camera"
-        tools:layout_editor_absoluteX="120dp"
-        tools:layout_editor_absoluteY="449dp" />
+        android:text="카메라로 퀘스트 수행하기" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>
