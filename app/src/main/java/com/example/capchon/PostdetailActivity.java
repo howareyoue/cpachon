@@ -28,7 +28,6 @@ public class PostdetailActivity extends AppCompatActivity {
 
     private TextView textViewTitle;
     private TextView textViewContents;
-    private TextView textViewName;
     private EditText editComment;
     private Button buttonSubmitComment;
     private RecyclerView recyclerViewComments;
@@ -37,10 +36,9 @@ public class PostdetailActivity extends AppCompatActivity {
 
     private DatabaseReference commentReference;
     private DatabaseReference userReference;
-    private DatabaseReference postUserReference;
 
     private String emailId;
-    private String postAuthorId;
+    private String postId; // 게시물 ID를 저장할 변수
     private String communityTitle;
     private String communityContents;
 
@@ -52,7 +50,6 @@ public class PostdetailActivity extends AppCompatActivity {
         // View 초기화
         textViewTitle = findViewById(R.id.detail_title);
         textViewContents = findViewById(R.id.detail_contents);
-        textViewName = findViewById(R.id.detail_name);
         editComment = findViewById(R.id.edit_comment);
         buttonSubmitComment = findViewById(R.id.button_submit_comment);
         recyclerViewComments = findViewById(R.id.recycler_view_comments);
@@ -62,30 +59,14 @@ public class PostdetailActivity extends AppCompatActivity {
         if (extras != null) {
             communityTitle = extras.getString("Title");
             communityContents = extras.getString("Contents");
-            postAuthorId = extras.getString("postId");
+            postId = extras.getString("postId"); // 게시물 ID 받기
 
             // Firebase 참조 설정
-            commentReference = FirebaseDatabase.getInstance().getReference("Comments").child(postAuthorId);
-            postUserReference = FirebaseDatabase.getInstance().getReference("UserAccount").child(postAuthorId);
+            commentReference = FirebaseDatabase.getInstance().getReference("Comments").child(postId); // postId를 사용하여 댓글 참조
 
-            // 작성자 정보 가져오기
-            postUserReference.addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                    UserAccount postAuthor = dataSnapshot.getValue(UserAccount.class);
-                    if (postAuthor != null) {
-                        String authorName = postAuthor.getName();
-                        textViewTitle.setText("제목: " + communityTitle);
-                        textViewName.setText("작성자: " + authorName);
-                        textViewContents.setText("내용: " + communityContents);
-                    }
-                }
-
-                @Override
-                public void onCancelled(@NonNull DatabaseError databaseError) {
-                    Toast.makeText(PostdetailActivity.this, "작성자 정보를 불러오는 데 실패했습니다.", Toast.LENGTH_SHORT).show();
-                }
-            });
+            // 게시물 제목과 내용을 표시
+            textViewTitle.setText("제목: " + communityTitle);
+            textViewContents.setText("내용: " + communityContents);
         }
 
         // RecyclerView 설정 (댓글 목록)
