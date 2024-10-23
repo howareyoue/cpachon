@@ -10,6 +10,7 @@ public class DirectionsResponse {
     public static class Route {
         @SerializedName("traoptimal")
         public List<Traoptimal> traoptimal;
+        public List<List<Double>> path;
     }
 
     public static class Traoptimal {
