@@ -1,23 +1,22 @@
 package com.example.capchon;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import android.annotation.SuppressLint;
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Paint;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -25,21 +24,16 @@ import java.util.List;
 public class QuestActivity extends AppCompatActivity {
 
     private static final String TAG = "QuestActivity";
-    private static final String PREFS_NAME = "QuestPrefs";
-    private static final String PREFS_KEY_DATE = "lastQuestDate";
-    private static final String PREFS_KEY_QUEST1 = "quest1";
-    private static final String PREFS_KEY_QUEST2 = "quest2";
-    private static final String PREFS_KEY_QUEST3 = "quest3";
 
-    private TextView quest1;
-    private TextView quest2;
-    private TextView quest3;
+    private TextView quest1, quest2, quest3;
     private Button btnCam;
 
-    private DatabaseReference databaseRef;
-    private List<String> allQuests = new ArrayList<>(); // List to hold quests retrieved from Realtime Database
+    private DatabaseReference dbRef;
+    private List<String> allQuests = new ArrayList<>();
 
-    @SuppressLint("MissingInflatedId")
+    private int trashQuestCount = 0; // 쓰레기 줍기 퀘스트 카운터
+    private String trashQuestText; // "쓰레기 줍기" 퀘스트 텍스트 저장
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -55,78 +49,63 @@ public class QuestActivity extends AppCompatActivity {
             startActivityForResult(intent, 1);
         });
 
-        // Initialize Firebase Realtime Database
-        databaseRef = FirebaseDatabase.getInstance().getReference("quests");
-
-        // Load quest data from Realtime Database
-        loadQuestsFromRealtimeDatabase();
+        dbRef = FirebaseDatabase.getInstance().getReference("quests");
+        loadQuestsFromDatabase();
     }
 
-    private void loadQuestsFromRealtimeDatabase() {
-        databaseRef.addListenerForSingleValueEvent(new ValueEventListener() {
+    private void loadQuestsFromDatabase() {
+        dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                allQuests.clear(); // Clear the list before adding new quests
-                for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                    String questName = snapshot.child("name").getValue(String.class);
-                    Log.d(TAG, "Retrieved quest: " + questName); // Log the retrieved quest
-                    allQuests.add(questName);
+                allQuests.clear();
+                for (DataSnapshot questSnapshot : dataSnapshot.getChildren()) {
+                    String questName = questSnapshot.child("name").getValue(String.class);
+                    if (questName != null) {
+                        allQuests.add(questName);
+                    }
                 }
-                // Ensure that at least 3 quests are available
+
                 if (allQuests.size() < 3) {
                     Toast.makeText(QuestActivity.this, "Not enough quests available", Toast.LENGTH_SHORT).show();
                 } else {
-                    checkAndSetNewQuests();
+                    selectRandomQuests();
                 }
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
-                Log.w(TAG, "Error getting data.", databaseError.toException());
+                Log.w(TAG, "loadQuests:onCancelled", databaseError.toException());
             }
         });
     }
 
-    private void checkAndSetNewQuests() {
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        long lastQuestDate = prefs.getLong(PREFS_KEY_DATE, 0);
-        long currentTime = System.currentTimeMillis();
-
-        if (!isSameDay(lastQuestDate, currentTime)) {
-            selectNewQuests(prefs);
-        } else {
-            loadQuests(prefs);
-        }
-    }
-
-    private boolean isSameDay(long time1, long time2) {
-        return (time1 / (1000 * 60 * 60 * 24)) == (time2 / (1000 * 60 * 60 * 24));
-    }
-
-    private void selectNewQuests(SharedPreferences prefs) {
-        if (allQuests.size() < 3) {
-            Toast.makeText(this, "Insufficient quests available!", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
+    private void selectRandomQuests() {
         Collections.shuffle(allQuests);
 
-        quest1.setText(allQuests.get(0)); // Set text for quest1
-        quest2.setText(allQuests.get(1)); // Set text for quest2
-        quest3.setText(allQuests.get(2)); // Set text for quest3
+        String quest1Text = formatQuestText(allQuests.get(0));
+        String quest2Text = formatQuestText(allQuests.get(1));
+        String quest3Text = formatQuestText(allQuests.get(2));
 
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.putLong(PREFS_KEY_DATE, System.currentTimeMillis());
-        editor.putString(PREFS_KEY_QUEST1, allQuests.get(0));
-        editor.putString(PREFS_KEY_QUEST2, allQuests.get(1));
-        editor.putString(PREFS_KEY_QUEST3, allQuests.get(2));
-        editor.apply();
+        quest1.setText(quest1Text);
+        quest2.setText(quest2Text);
+        quest3.setText(quest3Text);
+
+        // "쓰레기 줍기" 퀘스트가 선택된 경우에 대한 처리
+        if (quest1Text.contains("쓰레기 줍기")) {
+            trashQuestText = quest1Text; // 현재 "쓰레기 줍기" 퀘스트를 저장
+        } else if (quest2Text.contains("쓰레기 줍기")) {
+            trashQuestText = quest2Text; // 현재 "쓰레기 줍기" 퀘스트를 저장
+        } else if (quest3Text.contains("쓰레기 줍기")) {
+            trashQuestText = quest3Text; // 현재 "쓰레기 줍기" 퀘스트를 저장
+        }
     }
 
-    private void loadQuests(SharedPreferences prefs) {
-        quest1.setText(prefs.getString(PREFS_KEY_QUEST1, "")); // Load saved quest1
-        quest2.setText(prefs.getString(PREFS_KEY_QUEST2, "")); // Load saved quest2
-        quest3.setText(prefs.getString(PREFS_KEY_QUEST3, "")); // Load saved quest3
+    // "쓰레기 줍기" 퀘스트일 경우 (0/3)으로 표시
+    private String formatQuestText(String questName) {
+        if (questName.equals("쓰레기 줍기")) {
+            return questName + " (0/3)";
+        }
+        return questName;
     }
 
     @Override
@@ -134,62 +113,56 @@ public class QuestActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
 
         if (requestCode == 1 && resultCode == RESULT_OK) {
-            if (data != null) {
-                String recognizedQuest = data.getStringExtra("recognizedQuest");
-                updateQuestStatus(recognizedQuest);
-            }
-        }
-    }
-
-    private void updateQuestStatus(String recognizedQuest) {
-        if (recognizedQuest == null) return;
-
-        // Check if recognized quest matches any of the displayed quests
-        if (recognizedQuest.equals(quest1.getText().toString())) {
-            completeQuest(quest1);
-        } else if (recognizedQuest.equals(quest2.getText().toString())) {
-            completeQuest(quest2);
-        } else if (recognizedQuest.equals(quest3.getText().toString())) {
-            completeQuest(quest3);
-        }
-    }
-
-    private void completeQuest(TextView questView) {
-        questView.setPaintFlags(questView.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG); // Add strikethrough to text
-    }
-
-    // Update progress for trash collection quest
-    private void updateTrashQuestProgress(String questId) {
-        DatabaseReference questRef = databaseRef.child(questId);
-
-        questRef.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if (snapshot.exists()) {
-                    Long currentCount = snapshot.child("count").getValue(Long.class);
-                    if (currentCount != null && currentCount < 3) {
-                        questRef.child("count").setValue(currentCount + 1)
-                                .addOnSuccessListener(aVoid -> {
-                                    if (currentCount + 1 == 3) {
-                                        completeQuest(quest1);  // Logic for quest completion
-                                    } else {
-                                        Toast.makeText(QuestActivity.this, "Trash collected: " + (currentCount + 1), Toast.LENGTH_SHORT).show();
-                                    }
-                                })
-                                .addOnFailureListener(e -> Log.w(TAG, "Error updating document", e));
-                    }
+            String recognizedQuest = data.getStringExtra("recognizedQuest");
+            if (recognizedQuest != null && recognizedQuest.equals("success")) {
+                String quest = data.getStringExtra("questName");
+                if (quest != null) {
+                    markQuestAsCompleted(quest);
                 }
             }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-                Log.w(TAG, "Error getting data.", databaseError.toException());
-            }
-        });
+        }
     }
 
-    // Notification for quest completion
-    private void completeQuest() {
-        Toast.makeText(this, "You have completed the trash collection quest!", Toast.LENGTH_SHORT).show();
+    private void markQuestAsCompleted(String recognizedQuest) {
+        // 쓰레기 줍기 퀘스트인 경우 카운트 증가
+        if (trashQuestText != null && recognizedQuest.equals("쓰레기 줍기")) {
+            updateTrashQuestProgress();
+        } else {
+            // 다른 퀘스트는 일반 취소선 처리
+            if (quest1.getText().toString().equals(recognizedQuest)) {
+                quest1.setPaintFlags(quest1.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+            } else if (quest2.getText().toString().equals(recognizedQuest)) {
+                quest2.setPaintFlags(quest2.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+            } else if (quest3.getText().toString().equals(recognizedQuest)) {
+                quest3.setPaintFlags(quest3.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+            }
+        }
+    }
+
+    // "쓰레기 줍기" 퀘스트 진행 상황 업데이트
+    private void updateTrashQuestProgress() {
+        trashQuestCount++;
+        String updatedText = "쓰레기 줍기 (" + trashQuestCount + "/3)";
+
+        // 업데이트된 텍스트로 변경
+        if (quest1.getText().toString().contains("쓰레기 줍기")) {
+            quest1.setText(updatedText);
+        } else if (quest2.getText().toString().contains("쓰레기 줍기")) {
+            quest2.setText(updatedText);
+        } else if (quest3.getText().toString().contains("쓰레기 줍기")) {
+            quest3.setText(updatedText);
+        }
+
+        if (trashQuestCount == 3) {
+            // 카운트가 3에 도달하면 취소선 적용
+            if (quest1.getText().toString().contains("쓰레기 줍기")) {
+                quest1.setPaintFlags(quest1.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+            } else if (quest2.getText().toString().contains("쓰레기 줍기")) {
+                quest2.setPaintFlags(quest2.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+            } else if (quest3.getText().toString().contains("쓰레기 줍기")) {
+                quest3.setPaintFlags(quest3.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+            }
+            Toast.makeText(this, "쓰레기 줍기 퀘스트 완료!", Toast.LENGTH_SHORT).show();
+        }
     }
 }

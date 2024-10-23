@@ -1,19 +1,14 @@
 package com.example.capchon;
 
-/*
- * Created by ishaanjav
- * github.com/ishaanjav
- */
-//
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.media.ThumbnailUtils;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.util.Log;
-import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -97,34 +92,53 @@ public class AiActivity extends AppCompatActivity {
 
             float[] confidences = outputFeature0.getFloatArray();
 
-            if (confidences.length == 10) {
-                String[] classes = new String[]{"Garbage_CigaretteButt", "Garbage_CoffeeCup", "Garbage_PlasticBag", "Garbage_Plastic", "Action_Lying+Sitting", "Action_Hand", "Action_FailedAction", "Object_MNU", "Object_Fountain", "Object_EngineeringBuilding4"};
+            // Define the classes your model can detect
+            String[] classes = new String[]{"Garbage_CigaretteButt", "Garbage_CoffeeCup", "Garbage_PlasticBag", "Garbage_Plastic", "Action_Lying+Sitting", "Action_Hand", "Action_FailedAction", "Object_MNU", "Object_Fountain", "Object_EngineeringBuilding4"};
 
-                // find the index of the class with the biggest confidence.
-                int maxPos = 0;
-                float maxConfidence = 0;
-                for (int i = 0; i < confidences.length; i++) {
-                    if (confidences[i] > maxConfidence) {
-                        maxConfidence = confidences[i];
-                        maxPos = i;
-                    }
+            // find the index of the class with the biggest confidence.
+            int maxPos = 0;
+            float maxConfidence = 0;
+            for (int i = 0; i < confidences.length; i++) {
+                if (confidences[i] > maxConfidence) {
+                    maxConfidence = confidences[i];
+                    maxPos = i;
                 }
-
-                result.setText("success");
-
-                StringBuilder s = new StringBuilder();
-                for (int i = 0; i < classes.length; i++) {
-                    s.append(String.format("%s: %.1f%%\n", classes[i], confidences[i] * 100));
-                }
-                confidence.setText(s.toString());
-            } else {
-                result.setText("failure");
-                confidence.setText("");
             }
+
+            // Process the result based on the recognized object
+            String recognizedClass = classes[maxPos];
+            result.setText(recognizedClass + " recognized!");
+
+            StringBuilder s = new StringBuilder();
+            for (int i = 0; i < classes.length; i++) {
+                s.append(String.format("%s: %.1f%%\n", classes[i], confidences[i] * 100));
+            }
+            confidence.setText(s.toString());
+
+            // Set the result for the quest if it's a garbage-related object
+            if (recognizedClass.contains("Garbage")) {
+                new Handler().postDelayed(() -> {
+                    Intent returnIntent = new Intent();
+                    returnIntent.putExtra("recognizedQuest", "success");
+                    returnIntent.putExtra("questName", "쓰레기 줍기"); // 쓰레기 퀘스트 이름 전달
+                    setResult(RESULT_OK, returnIntent);
+                    finish();
+                }, 3000);
+            } else if (maxConfidence >= 0.9) {
+                // If the confidence is over 90%, mark the corresponding quest as completed
+                new Handler().postDelayed(() -> {
+                    Intent returnIntent = new Intent();
+                    returnIntent.putExtra("recognizedQuest", "success");
+                    returnIntent.putExtra("questName", "분수대 사진"); // 분수대 사진 퀘스트 이름 전달
+                    setResult(RESULT_OK, returnIntent);
+                    finish();
+                }, 3000);
+            }
+            //퀘스트 각 내용 추가
 
             // Releases model resources if no longer used.
             model.close();
-        } catch (IOException | IllegalStateException e) {
+        } catch (IOException e) {
             Log.e(TAG, "Error classifying image", e);
             result.setText("failure");
             confidence.setText("");
