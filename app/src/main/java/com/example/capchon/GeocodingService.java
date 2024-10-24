@@ -5,13 +5,11 @@ import retrofit2.http.GET;
 import retrofit2.http.Header;
 import retrofit2.http.Query;
 
-public interface NaverDirectionsService {
-    @GET("/map-direction/v1/driving")
-    Call<DirectionsResponse> getWalkingRoute(
+public interface GeocodingService {
+    @GET("/map-geocode/v2/geocode")
+    Call<GeocodingResponse> getGeocode(
             @Header("X-NCP-APIGW-API-KEY-ID") String clientId,
             @Header("X-NCP-APIGW-API-KEY") String clientSecret,
-            @Query("start") String start,
-            @Query("goal") String goal,
-            @Query("option") String option
+            @Query("query") String query
     );
 }
