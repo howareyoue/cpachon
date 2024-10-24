@@ -93,7 +93,9 @@ public class AiActivity extends AppCompatActivity {
             float[] confidences = outputFeature0.getFloatArray();
 
             // Define the classes your model can detect
-            String[] classes = new String[]{"Garbage_CigaretteButt", "Garbage_CoffeeCup", "Garbage_PlasticBag", "Garbage_Plastic", "Action_Lying+Sitting", "Action_Hand", "Action_FailedAction", "Object_MNU", "Object_Fountain", "Object_EngineeringBuilding4"};
+            String[] classes = new String[]{"Garbage_CigaretteButt", "Garbage_CoffeeCup", "Garbage_PlasticBag", "Garbage_Plastic",
+                    "Action_Lying+Sitting", "Action_Hand", "Action_FailedAction",
+                    "Object_MNU", "Object_Fountain", "Object_EngineeringBuilding4"};
 
             // find the index of the class with the biggest confidence.
             int maxPos = 0;
@@ -115,26 +117,21 @@ public class AiActivity extends AppCompatActivity {
             }
             confidence.setText(s.toString());
 
-            // Set the result for the quest if it's a garbage-related object
-            if (recognizedClass.contains("Garbage")) {
-                new Handler().postDelayed(() -> {
-                    Intent returnIntent = new Intent();
-                    returnIntent.putExtra("recognizedQuest", "success");
-                    returnIntent.putExtra("questName", "쓰레기 줍기"); // 쓰레기 퀘스트 이름 전달
-                    setResult(RESULT_OK, returnIntent);
-                    finish();
-                }, 3000);
-            } else if (maxConfidence >= 0.9) {
-                // If the confidence is over 90%, mark the corresponding quest as completed
-                new Handler().postDelayed(() -> {
-                    Intent returnIntent = new Intent();
-                    returnIntent.putExtra("recognizedQuest", "success");
-                    returnIntent.putExtra("questName", "분수대 사진"); // 분수대 사진 퀘스트 이름 전달
-                    setResult(RESULT_OK, returnIntent);
-                    finish();
-                }, 3000);
+            // Set the result for the quest if confidence is over 90%
+            if (maxConfidence >= 0.9f) {
+                if (recognizedClass.equals("Garbage_CigaretteButt") || recognizedClass.equals("Garbage_CoffeeCup") ||
+                        recognizedClass.equals("Garbage_PlasticBag") || recognizedClass.equals("Garbage_Plastic")) {
+                    markQuestAsCompleted("쓰레기 줍기");
+                } else if (recognizedClass.equals("Object_Fountain")) {
+                    markQuestAsCompleted("분수대 사진");
+                } else if (recognizedClass.equals("Object_MNU")) {
+                    markQuestAsCompleted("MNU 사진");
+                } else if (recognizedClass.equals("Action_Hand")) {
+                    markQuestAsCompleted("강아지 손");
+                } else if (recognizedClass.equals("Action_Lying+Sitting")) {
+                    markQuestAsCompleted("강아지 앉기");
+                }
             }
-            //퀘스트 각 내용 추가
 
             // Releases model resources if no longer used.
             model.close();
@@ -184,4 +181,17 @@ public class AiActivity extends AppCompatActivity {
             }
         }
     }
+
+    // Mark a quest as completed
+    private void markQuestAsCompleted(String questName) {
+        // 퀘스트를 취소선으로 그리거나 완료된 표시를 하는 코드 작성
+        new Handler().postDelayed(() -> {
+            Intent returnIntent = new Intent();
+            returnIntent.putExtra("recognizedQuest", "success");
+            returnIntent.putExtra("questName", questName); // 해당 퀘스트 이름 전달
+            setResult(RESULT_OK, returnIntent);
+            finish();
+        }, 3000); // 3초 후에 결과 반환
+    }
 }
+//추후에 하루에 한 번씩 퀘스트 리스트가 갱신 되는 기능 추가
