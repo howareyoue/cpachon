@@ -173,6 +173,7 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
 
     // 목적지를 Geocoding API로 좌표로 변환하는 메소드
     private void getLatLngFromGeocoding(String destination, GeocodingCallback callback) {
+        Log.d(TAG, "목적지 입력: " + destination);
         Call<GeocodingResponse> call = geocodingService.getGeocode(CLIENT_ID, CLIENT_SECRET, destination);
         call.enqueue(new Callback<GeocodingResponse>() {
             @Override
@@ -184,15 +185,18 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
                         LatLng latLng = new LatLng(Double.parseDouble(address.y), Double.parseDouble(address.x));
                         callback.onLatLngReceived(latLng);
                     } else {
+                        Log.e(TAG, "Geocoding 응답에 주소가 없습니다.");
                         callback.onLatLngReceived(null);
                     }
                 } else {
+                    Log.e(TAG, "Geocoding API 요청 실패: " + response.message());
                     callback.onLatLngReceived(null);
                 }
             }
 
             @Override
             public void onFailure(Call<GeocodingResponse> call, Throwable t) {
+                Log.e(TAG, "Geocoding API 호출 실패: " + t.getMessage());
                 callback.onLatLngReceived(null);
             }
         });
