@@ -37,13 +37,13 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
-//        Button btn_m = findViewById(R.id.btn_m);
-//        btn_m.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                Intent intent = new Intent(getApplicationContext(), MapsNaverActivity.class);startActivity(intent);
-//            }
-//        });
+        Button btn_m = findViewById(R.id.btn_m);
+        btn_m.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(getApplicationContext(), MapsNaverActivity.class);startActivity(intent);
+            }
+        });
         Button btn_c = findViewById(R.id.btn_c);
         btn_c.setOnClickListener(new View.OnClickListener() {
             @Override
