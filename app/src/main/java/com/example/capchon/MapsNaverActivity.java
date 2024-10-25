@@ -93,67 +93,63 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
     }
 
     private void recommendWalkingRoute() {
-        String destination = etDestination.getText().toString().trim();
+        // 현재 위치: 국립목포대학교 공과대학 4호관 (위도, 경도)
+        LatLng currentLatLng = new LatLng(34.896049, 126.589651);
 
-        if (destination.isEmpty()) {
-            Toast.makeText(this, "목적지를 입력하세요.", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        // 목적지: 청계중학교 (위도, 경도)
+        LatLng goalLatLng = new LatLng(37.566084, 126.977243);
 
-        getLatLngFromGeocoding(destination, goalLatLng -> {
-            if (goalLatLng == null) {
-                Toast.makeText(MapsNaverActivity.this, "유효하지 않은 목적지입니다.", Toast.LENGTH_SHORT).show();
-                return;
-            }
+        if (currentLatLng != null && goalLatLng != null) {
+            String start = currentLatLng.longitude + "," + currentLatLng.latitude;
+            String goal = goalLatLng.longitude + "," + goalLatLng.latitude;
 
-            if (currentLatLng != null) {
-                String start = currentLatLng.longitude + "," + currentLatLng.latitude;
-                String goal = goalLatLng.longitude + "," + goalLatLng.latitude;
+            Call<DirectionsResponse> call = directionsService.getWalkingRoute(CLIENT_ID, CLIENT_SECRET, start, goal, "shortest");
 
-                Call<DirectionsResponse> call = directionsService.getWalkingRoute(CLIENT_ID, CLIENT_SECRET, start, goal, "shortest");
+            call.enqueue(new Callback<DirectionsResponse>() {
+                @Override
+                public void onResponse(Call<DirectionsResponse> call, Response<DirectionsResponse> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        DirectionsResponse directionsResponse = response.body();
+                        if (directionsResponse != null && directionsResponse.route != null) {
+                            List<List<Double>> path = directionsResponse.route.path;
 
-                call.enqueue(new Callback<DirectionsResponse>() {
-                    @Override
-                    public void onResponse(Call<DirectionsResponse> call, Response<DirectionsResponse> response) {
-                        if (response.isSuccessful() && response.body() != null) {
-                            DirectionsResponse directionsResponse = response.body();
-                            if (directionsResponse != null && directionsResponse.route != null) {
-                                List<List<Double>> path = directionsResponse.route.path;
-
-                                if (path != null && !path.isEmpty()) {
-                                    List<LatLng> coords = new ArrayList<>();
-                                    for (List<Double> point : path) {
-                                        if (point.size() >= 2) {
-                                            coords.add(new LatLng(point.get(1), point.get(0)));
-                                        }
+                            if (path != null && !path.isEmpty()) {
+                                List<LatLng> coords = new ArrayList<>();
+                                for (List<Double> point : path) {
+                                    if (point.size() >= 2) {
+                                        coords.add(new LatLng(point.get(1), point.get(0)));
                                     }
-
-                                    polyline.setMap(null);
-                                    polyline.setCoords(coords);
-                                    polyline.setMap(naverMap);
-
-                                    Toast.makeText(MapsNaverActivity.this, "최적의 경로를 추천합니다.", Toast.LENGTH_SHORT).show();
-                                } else {
-                                    Toast.makeText(MapsNaverActivity.this, "경로를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
                                 }
-                            }
-                        } else {
-                            Log.e("NAVER_MAPS", "경로 요청 실패: " + response.message());
-                            Toast.makeText(MapsNaverActivity.this, "경로 요청 실패: " + response.message(), Toast.LENGTH_SHORT).show();
-                        }
-                    }
 
-                    @Override
-                    public void onFailure(Call<DirectionsResponse> call, Throwable t) {
-                        Log.e("NAVER_MAPS", "경로 요청 실패: " + t.getMessage(), t);
-                        Toast.makeText(MapsNaverActivity.this, "경로 요청 실패: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                                // 기존 경로 지우기
+                                polyline.setMap(null);
+
+                                // 새로운 경로 설정
+                                polyline.setCoords(coords);
+                                polyline.setMap(naverMap);
+
+                                Toast.makeText(MapsNaverActivity.this, "최적의 경로를 추천합니다.", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(MapsNaverActivity.this, "경로를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    } else {
+                        Log.e("NAVER_MAPS", "경로 요청 실패: " + response.message());
+                        Toast.makeText(MapsNaverActivity.this, "경로 요청 실패: " + response.message(), Toast.LENGTH_SHORT).show();
                     }
-                });
-            } else {
-                Toast.makeText(MapsNaverActivity.this, "현재 위치를 가져올 수 없습니다.", Toast.LENGTH_SHORT).show();
-            }
-        });
+                }
+
+                @Override
+                public void onFailure(Call<DirectionsResponse> call, Throwable t) {
+                    Log.e("NAVER_MAPS", "경로 요청 실패: " + t.getMessage(), t);
+                    Toast.makeText(MapsNaverActivity.this, "경로 요청 실패: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            });
+        } else {
+            Toast.makeText(MapsNaverActivity.this, "현재 위치 또는 목적지를 가져올 수 없습니다.", Toast.LENGTH_SHORT).show();
+        }
     }
+
 
     private void getLatLngFromGeocoding(String destination, GeocodingCallback callback) {
         Call<GeocodingResponse> call = geocodingService.getGeocode(CLIENT_ID, CLIENT_SECRET, destination);
