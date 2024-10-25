@@ -9,7 +9,7 @@ public interface GeocodingService {
     @GET("map-geocode/v2/geocode")
     Call<GeocodingResponse> getGeocode(
             @Header("u6nzkkp800") String clientId,
-            @Header("pTQBJXJxzwgiafqynJnFv3kWloFQKTdBUjkFukt1") String clientSecret,
+            @Header("IcZEWMnaSNuwEzEuebVII3IUUUlzxoGZvz23NaNR") String clientSecret,
             @Query("query") String address
     );
 }
