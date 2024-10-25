@@ -1,8 +1,7 @@
 package com.example.capchon;
 
-import android.content.Context;
-import android.location.Location;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -12,15 +11,16 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.naver.maps.geometry.LatLng;
 import com.naver.maps.map.CameraUpdate;
-import com.naver.maps.map.MapFragment;
+import com.naver.maps.map.MapView;
 import com.naver.maps.map.NaverMap;
-import com.naver.maps.map.LocationTrackingMode;
-import android.content.pm.PackageManager;
-
 import com.naver.maps.map.OnMapReadyCallback;
-import com.naver.maps.map.overlay.Marker;
-import com.naver.maps.map.overlay.PathOverlay;
+import com.naver.maps.map.overlay.PolylineOverlay;
 import com.naver.maps.map.util.FusedLocationSource;
+import com.naver.maps.map.NaverMapSdk;
+import com.naver.maps.map.LocationTrackingMode;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -28,184 +28,162 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCallback {
 
+    private static final String CLIENT_ID = "u6nzkkp800"; // 네이버 Client ID
+    private static final String CLIENT_SECRET = "pTQBJXJxzwgiafqynJnFv3kWloFQKTdBUjkFukt1"; // 네이버 Client Secret
+    private static final String BASE_URL = "https://naveropenapi.apigw.ntruss.com/";
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1000;
+
+    private MapView mapView;
     private NaverMap naverMap;
     private FusedLocationSource locationSource;
-
-    private PathOverlay currentPath; // 현재 경로를 저장할 변수
-    private Marker destinationMarker; // 목적지 마커를 저장할 변수
+    private LatLng currentLatLng;
+    private PolylineOverlay polyline;
+    private NaverDirectionsService directionsService;
+    private GeocodingService geocodingService;
+    private EditText etDestination;
+    private Button btnRecommendRoute;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps_naver);
 
-        // 지도 초기화
-        MapFragment mapFragment = (MapFragment) getSupportFragmentManager().findFragmentById(R.id.map_view);
-        if (mapFragment == null) {
-            mapFragment = MapFragment.newInstance();
-            getSupportFragmentManager().beginTransaction().add(R.id.map_view, mapFragment).commit();
-        }
-        mapFragment.getMapAsync(this);
+        etDestination = findViewById(R.id.et_destination);
 
-        // 위치 소스 초기화
+        NaverMapSdk.getInstance(this).setClient(new NaverMapSdk.NaverCloudPlatformClient(CLIENT_ID));
+
+        mapView = findViewById(R.id.map_view);
+        btnRecommendRoute = findViewById(R.id.btn_recommend_route);
+
+        mapView.getMapAsync(this);
         locationSource = new FusedLocationSource(this, LOCATION_PERMISSION_REQUEST_CODE);
 
-        // 버튼 및 입력 필드 설정
-        EditText etDestination = findViewById(R.id.et_destination);
-        Button btnSetDestination = findViewById(R.id.btn_find_destination);
+        // Retrofit 설정
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(BASE_URL)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
 
-        // 버튼 클릭 이벤트 (목적지 설정)
-        btnSetDestination.setOnClickListener(v -> {
-            String destinationAddress = etDestination.getText().toString();
-            if (!destinationAddress.isEmpty()) {
-                getGeocode(destinationAddress); // Geocoding API 호출
+        directionsService = retrofit.create(NaverDirectionsService.class);
+        geocodingService = retrofit.create(GeocodingService.class);
+
+        btnRecommendRoute.setOnClickListener(v -> {
+            if (naverMap != null && currentLatLng != null) {
+                recommendWalkingRoute();
+            }
+        });
+
+        polyline = new PolylineOverlay(); // 경로 표시를 위한 PolylineOverlay 객체 초기화
+    }
+
+    @Override
+    public void onMapReady(@NonNull NaverMap naverMap) {
+        this.naverMap = naverMap;
+        naverMap.setLocationSource(locationSource);
+
+        naverMap.setLocationTrackingMode(LocationTrackingMode.Follow);
+
+        naverMap.addOnLocationChangeListener(location -> {
+            currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+            CameraUpdate cameraUpdate = CameraUpdate.scrollTo(currentLatLng);
+            naverMap.moveCamera(cameraUpdate);
+        });
+    }
+
+    private void recommendWalkingRoute() {
+        String destination = etDestination.getText().toString().trim();
+
+        if (destination.isEmpty()) {
+            Toast.makeText(this, "목적지를 입력하세요.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        getLatLngFromGeocoding(destination, goalLatLng -> {
+            if (goalLatLng == null) {
+                Toast.makeText(MapsNaverActivity.this, "유효하지 않은 목적지입니다.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (currentLatLng != null) {
+                String start = currentLatLng.longitude + "," + currentLatLng.latitude;
+                String goal = goalLatLng.longitude + "," + goalLatLng.latitude;
+
+                Call<DirectionsResponse> call = directionsService.getWalkingRoute(CLIENT_ID, CLIENT_SECRET, start, goal, "shortest");
+
+                call.enqueue(new Callback<DirectionsResponse>() {
+                    @Override
+                    public void onResponse(Call<DirectionsResponse> call, Response<DirectionsResponse> response) {
+                        if (response.isSuccessful() && response.body() != null) {
+                            DirectionsResponse directionsResponse = response.body();
+                            if (directionsResponse != null && directionsResponse.route != null) {
+                                List<List<Double>> path = directionsResponse.route.path;
+
+                                if (path != null && !path.isEmpty()) {
+                                    List<LatLng> coords = new ArrayList<>();
+                                    for (List<Double> point : path) {
+                                        if (point.size() >= 2) {
+                                            coords.add(new LatLng(point.get(1), point.get(0)));
+                                        }
+                                    }
+
+                                    polyline.setMap(null);
+                                    polyline.setCoords(coords);
+                                    polyline.setMap(naverMap);
+
+                                    Toast.makeText(MapsNaverActivity.this, "최적의 경로를 추천합니다.", Toast.LENGTH_SHORT).show();
+                                } else {
+                                    Toast.makeText(MapsNaverActivity.this, "경로를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        } else {
+                            Log.e("NAVER_MAPS", "경로 요청 실패: " + response.message());
+                            Toast.makeText(MapsNaverActivity.this, "경로 요청 실패: " + response.message(), Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<DirectionsResponse> call, Throwable t) {
+                        Log.e("NAVER_MAPS", "경로 요청 실패: " + t.getMessage(), t);
+                        Toast.makeText(MapsNaverActivity.this, "경로 요청 실패: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
             } else {
-                Toast.makeText(this, "목적지를 입력해주세요.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MapsNaverActivity.this, "현재 위치를 가져올 수 없습니다.", Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-    @Override
-    public void onMapReady(@NonNull NaverMap map) {
-        naverMap = map;
-
-        // 현재 위치 활성화
-        naverMap.setLocationSource(locationSource);
-        naverMap.setLocationTrackingMode(LocationTrackingMode.Follow);
-    }
-
-    // 주소를 위도/경도로 변환하는 함수
-    private void getGeocode(String address) {
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("https://naveropenapi.apigw.ntruss.com/")
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
-
-        GeocodingService service = retrofit.create(GeocodingService.class);
-        Call<GeocodingResponse> call = service.getGeocode("YOUR_CLIENT_ID", "YOUR_CLIENT_SECRET", address);
-
+    private void getLatLngFromGeocoding(String destination, GeocodingCallback callback) {
+        Call<GeocodingResponse> call = geocodingService.getGeocode(CLIENT_ID, CLIENT_SECRET, destination);
         call.enqueue(new Callback<GeocodingResponse>() {
             @Override
             public void onResponse(Call<GeocodingResponse> call, Response<GeocodingResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    List<GeocodingResult> results = response.body().getResults();
-                    if (!results.isEmpty()) {
-                        LatLng destination = new LatLng(results.get(0).getLatitude(), results.get(0).getLongitude());
-                        drawPathToDestination(destination);
-
-                        // 카메라 이동
-                        CameraUpdate cameraUpdate = CameraUpdate.scrollTo(destination);
-                        naverMap.moveCamera(cameraUpdate);
+                    GeocodingResponse geocodingResponse = response.body();
+                    if (geocodingResponse != null && geocodingResponse.addresses != null && !geocodingResponse.addresses.isEmpty()) {
+                        GeocodingResponse.Address address = geocodingResponse.addresses.get(0);
+                        LatLng latLng = new LatLng(Double.parseDouble(address.y), Double.parseDouble(address.x));
+                        callback.onLatLngReceived(latLng);
                     } else {
-                        Toast.makeText(MapsNaverActivity.this, "목적지를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
+                        Log.e("Geocoding", "유효하지 않은 주소입니다."); // 유효하지 않은 주소 로깅
+                        callback.onLatLngReceived(null);
                     }
                 } else {
-                    Toast.makeText(MapsNaverActivity.this, "Geocoding API 호출 실패", Toast.LENGTH_SHORT).show();
+                    Log.e("Geocoding", "API 요청 실패: " + response.message()); // API 요청 실패 로깅
+                    callback.onLatLngReceived(null);
                 }
             }
 
             @Override
             public void onFailure(Call<GeocodingResponse> call, Throwable t) {
-                Toast.makeText(MapsNaverActivity.this, "API 호출 실패: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                Log.e("Geocoding", "API 호출 실패: " + t.getMessage(), t);
+                callback.onLatLngReceived(null);
             }
         });
     }
-
-    // 경로 그리기 함수
-    private void drawPathToDestination(LatLng destination) {
-        Location currentLocation = locationSource.getLastLocation();
-
-        if (currentLocation != null) {
-            LatLng currentLatLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
-
-            // 이전 경로 및 마커 제거
-            if (currentPath != null) {
-                currentPath.setMap(null);
-            }
-            if (destinationMarker != null) {
-                destinationMarker.setMap(null);
-            }
-
-            // 새로운 경로를 요청
-            requestRoute(currentLatLng, destination);
-        } else {
-            Toast.makeText(this, "현재 위치를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    // 네이버 API를 사용하여 경로 요청
-    private void requestRoute(LatLng start, LatLng destination) {
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("https://naveropenapi.apigw.ntruss.com/")
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
-
-        NaverDirectionsService service = retrofit.create(NaverDirectionsService.class);
-
-        String startCoords = start.latitude + "," + start.longitude; // "위도,경도"
-        String goalCoords = destination.latitude + "," + destination.longitude; // "위도,경도"
-
-        Call<DirectionsResponse> call = service.getWalkingRoute("YOUR_CLIENT_ID", "YOUR_CLIENT_SECRET",
-                startCoords, goalCoords, ""); // 옵션 비워두기
-
-        call.enqueue(new Callback<DirectionsResponse>() {
-            @Override
-            public void onResponse(Call<DirectionsResponse> call, Response<DirectionsResponse> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    // 경로를 받아와서 PathOverlay로 그리기
-                    List<LatLng> pathCoords = new ArrayList<>();
-                    for (RoutePoint point : response.body().getRoutePoints()) {
-                        pathCoords.add(new LatLng(point.getLatitude(), point.getLongitude()));
-                    }
-                    drawPath(pathCoords);
-                } else {
-                    Toast.makeText(MapsNaverActivity.this, "경로를 가져오지 못했습니다.", Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<DirectionsResponse> call, Throwable t) {
-                Toast.makeText(MapsNaverActivity.this, "API 호출 실패: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
-    private void drawPath(List<LatLng> pathCoords) {
-        // 기존 경로 제거
-        if (currentPath != null) {
-            currentPath.setMap(null);
-        }
-
-        // 새 경로 그리기
-        currentPath = new PathOverlay();
-        currentPath.setCoords(pathCoords);
-        currentPath.setMap(naverMap);
-
-        // 목적지 마커 표시
-        if (destinationMarker != null) {
-            destinationMarker.setMap(null);
-        }
-        destinationMarker = new Marker();
-        destinationMarker.setPosition(pathCoords.get(pathCoords.size() - 1)); // 경로의 마지막 지점
-        destinationMarker.setMap(naverMap);
-    }
-
-    // 위치 권한 요청 결과 처리
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                locationSource.onRequestPermissionsResult(requestCode, permissions, grantResults);
-            } else {
-                Toast.makeText(this, "위치 권한이 필요합니다.", Toast.LENGTH_SHORT).show();
-            }
-        }
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    private interface GeocodingCallback {
+        void onLatLngReceived(LatLng latLng);
     }
 }
