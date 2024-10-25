@@ -6,11 +6,10 @@ import retrofit2.http.Header;
 import retrofit2.http.Query;
 
 public interface GeocodingService {
-
     @GET("map-geocode/v2/geocode")
     Call<GeocodingResponse> getGeocode(
-            @Header("u6nzkkp800") String clientId,
-            @Header("pTQBJXJxzwgiafqynJnFv3kWloFQKTdBUjkFukt1") String clientSecret,
+            @Header("X-NCP-APIGW-API-KEY-ID") String clientId,
+            @Header("X-NCP-APIGW-API-KEY") String clientSecret,
             @Query("query") String address
     );
 }

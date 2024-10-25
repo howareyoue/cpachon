@@ -107,7 +107,6 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
             return;
         }
 
-        // Geocoding을 통해 목적지를 좌표로 변환
         getLatLngFromGeocoding(destination, goalLatLng -> {
             if (goalLatLng == null) {
                 Toast.makeText(MapsNaverActivity.this, "유효하지 않은 목적지입니다.", Toast.LENGTH_SHORT).show();
@@ -118,7 +117,7 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
                 String start = currentLatLng.longitude + "," + currentLatLng.latitude;
                 String goal = goalLatLng.longitude + "," + goalLatLng.latitude;
 
-                Call<DirectionsResponse> call = directionsService.getWalkingRoute(CLIENT_ID, CLIENT_SECRET, start, goal, "shortest");
+                Call<DirectionsResponse> call = directionsService.getWalkingRoute("u6nzkkp800", "pTQBJXJxzwgiafqynJnFv3kWloFQKTdBUjkFukt1", start, goal, "shortest");
 
                 call.enqueue(new Callback<DirectionsResponse>() {
                     @Override
@@ -136,10 +135,7 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
                                         }
                                     }
 
-                                    // 기존 경로 지우기
                                     polyline.setMap(null);
-
-                                    // 새로운 경로 설정
                                     polyline.setCoords(coords);
                                     polyline.setMap(naverMap);
 
@@ -165,6 +161,7 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
             }
         });
     }
+
 
     // 목적지를 Geocoding API로 좌표로 변환하는 메소드
     private void getLatLngFromGeocoding(String destination, GeocodingCallback callback) {
