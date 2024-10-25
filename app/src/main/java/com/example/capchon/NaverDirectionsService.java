@@ -6,13 +6,12 @@ import retrofit2.http.Header;
 import retrofit2.http.Query;
 
 public interface NaverDirectionsService {
-
     @GET("map-direction/v1/walking")
     Call<DirectionsResponse> getWalkingRoute(
-            @Header("u6nzkkp800") String clientId,
-            @Header("pTQBJXJxzwgiafqynJnFv3kWloFQKTdBUjkFukt1") String clientSecret,
+            @Header("X-NCP-APIGW-API-KEY-ID") String clientId,
+            @Header("X-NCP-APIGW-API-KEY") String clientSecret,
             @Query("start") String start,
             @Query("goal") String goal,
-            @Query("option") String option // 예: "traoptimal" 최적 경로
+            @Query("option") String option
     );
 }
