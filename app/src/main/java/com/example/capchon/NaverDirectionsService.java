@@ -7,7 +7,7 @@ import retrofit2.http.Query;
 
 public interface NaverDirectionsService {
 
-    @GET("map-direction/v1/driving")
+    @GET("map-direction/v1/walking")
     Call<DirectionsResponse> getWalkingRoute(
             @Header("u6nzkkp800") String clientId,
             @Header("pTQBJXJxzwgiafqynJnFv3kWloFQKTdBUjkFukt1") String clientSecret,
