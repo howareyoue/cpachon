@@ -71,7 +71,7 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
             if (naverMap != null && currentLatLng != null) {
                 String destinationAddress = etDestination.getText().toString();
                 if (!destinationAddress.isEmpty()) {
-                    // 경로 추천
+                    // 직접적으로 경로 추천
                     recommendWalkingRoute(destinationAddress);
                 } else {
                     Toast.makeText(this, "목적지를 입력해주세요.", Toast.LENGTH_SHORT).show();
@@ -98,20 +98,22 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
 
     // 경로 추천 기능
     private void recommendWalkingRoute(String destinationAddress) {
-        // 현재 위치
-        LatLng startLatLng = currentLatLng;
+        // 목적지의 위도와 경도를 설정합니다. (예: 무안 청계중학교)
+        double destinationLat = 34.807164; // 무안 청계중학교 위도
+        double destinationLng = 126.429870; // 무안 청계중학교 경도
+        LatLng goalLatLng = new LatLng(destinationLat, destinationLng);
+
+        LatLng startLatLng = currentLatLng; // 현재 위치
         if (startLatLng == null) {
             Toast.makeText(this, "현재 위치를 가져올 수 없습니다.", Toast.LENGTH_SHORT).show();
             return;
         }
 
+        String start = startLatLng.longitude + "," + startLatLng.latitude;
+        String goal = goalLatLng.longitude + "," + goalLatLng.latitude;
+
         // API 호출
-        Call<DirectionsResponse> call = directionsService.getWalkingRoute(
-                CLIENT_ID, CLIENT_SECRET,
-                startLatLng.longitude + "," + startLatLng.latitude, // 시작 위치
-                destinationAddress, // 목적지 주소
-                "shortest"
-        );
+        Call<DirectionsResponse> call = directionsService.getWalkingRoute(CLIENT_ID, CLIENT_SECRET, start, goal, "shortest");
 
         call.enqueue(new Callback<DirectionsResponse>() {
             @Override
