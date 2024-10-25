@@ -118,7 +118,7 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
                 String start = currentLatLng.longitude + "," + currentLatLng.latitude;
                 String goal = goalLatLng.longitude + "," + goalLatLng.latitude;
 
-                Call<DirectionsResponse> call = directionsService.getWalkingRoute(CLIENT_ID, CLIENT_SECRET, start, goal, "traoptimal");
+                Call<DirectionsResponse> call = directionsService.getWalkingRoute(CLIENT_ID, CLIENT_SECRET, start, goal, "shortest");
 
                 call.enqueue(new Callback<DirectionsResponse>() {
                     @Override
