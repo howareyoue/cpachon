@@ -10,22 +10,17 @@
         android:layout_height="0dp"
         android:layout_weight="1" />
 
-    <!-- 목적지 입력 필드 추가 -->
+    <!-- 목적지 입력 필드 -->
     <EditText
         android:id="@+id/et_destination"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="목적지를 입력하세요" />
 
+    <!-- 경로 추천 버튼 -->
     <Button
         android:id="@+id/btn_recommend_route"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="경로 추천" />
-
-    <Button
-        android:id="@+id/btn_return_to_current_location"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="현재위치 돌아오기" />
 </LinearLayout>
