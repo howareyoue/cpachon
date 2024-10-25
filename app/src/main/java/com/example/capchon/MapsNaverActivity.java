@@ -32,7 +32,7 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
 
     private static final String CLIENT_ID = "u6nzkkp800"; // 네이버 Client ID
     private static final String CLIENT_SECRET = "pTQBJXJxzwgiafqynJnFv3kWloFQKTdBUjkFukt1"; // 네이버 Client Secret
-    private static final String BASE_URL = "https://naveropenapi.apigw.ntru/ss.com";
+    private static final String BASE_URL = "https://naveropenapi.apigw.ntruss.com/";
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1000;
 
     private MapView mapView;
@@ -41,26 +41,21 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
     private LatLng currentLatLng;
     private PolylineOverlay polyline;
     private NaverDirectionsService directionsService;
+    private GeocodingService geocodingService; // 추가된 부분
     private EditText etDestination;
     private Button btnRecommendRoute;
-
-    // 국립목포대학교 공과대학 4호관의 좌표
-    private static final LatLng START_LATLNG = new LatLng(34.810186, 126.392073); // 국립목포대학교 공과대학 4호관 좌표
-    // 청계중학교의 좌표
-    private static final LatLng GOAL_LATLNG = new LatLng(34.855506, 126.418888); // 전남 무안 청계중학교 좌표
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps_naver);
 
-        // Naver Map SDK 초기화
-        NaverMapSdk.getInstance(this).setClient(new NaverMapSdk.NaverCloudPlatformClient(CLIENT_ID));
-
-        // View 초기화
+        etDestination = findViewById(R.id.et_destination);
         mapView = findViewById(R.id.map_view);
         btnRecommendRoute = findViewById(R.id.btn_recommend_route);
 
+        // Naver Map SDK 초기화
+        NaverMapSdk.getInstance(this).setClient(new NaverMapSdk.NaverCloudPlatformClient(CLIENT_ID));
         mapView.getMapAsync(this);
         locationSource = new FusedLocationSource(this, LOCATION_PERMISSION_REQUEST_CODE);
 
@@ -71,11 +66,17 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
                 .build();
 
         directionsService = retrofit.create(NaverDirectionsService.class);
+        geocodingService = retrofit.create(GeocodingService.class); // 추가된 부분
 
         // 경로 추천 버튼 클릭 리스너
         btnRecommendRoute.setOnClickListener(v -> {
-            if (naverMap != null) {
-                recommendWalkingRoute();
+            if (naverMap != null && currentLatLng != null) {
+                String destinationAddress = etDestination.getText().toString();
+                if (!destinationAddress.isEmpty()) {
+                    getGeocodeAndRecommendRoute(destinationAddress);
+                } else {
+                    Toast.makeText(this, "목적지를 입력해주세요.", Toast.LENGTH_SHORT).show();
+                }
             }
         });
 
@@ -86,8 +87,6 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
     public void onMapReady(@NonNull NaverMap naverMap) {
         this.naverMap = naverMap;
         naverMap.setLocationSource(locationSource);
-
-        // 위치 추적 모드 설정
         naverMap.setLocationTrackingMode(LocationTrackingMode.Follow);
 
         // 현재 위치 가져오기
@@ -98,11 +97,42 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
         });
     }
 
+    // 지오코딩을 통해 주소를 위도/경도로 변환 후 경로 추천
+    private void getGeocodeAndRecommendRoute(String address) {
+        Call<GeocodingResponse> call = geocodingService.getGeocode(CLIENT_ID, CLIENT_SECRET, address);
+        call.enqueue(new Callback<GeocodingResponse>() {
+            @Override
+            public void onResponse(Call<GeocodingResponse> call, Response<GeocodingResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    List<GeocodingResponse.GeocodingResult> results = response.body().addresses;
+                    if (results != null && !results.isEmpty()) {
+                        double lat = results.get(0).y; // 위도
+                        double lng = results.get(0).x; // 경도
+                        LatLng goalLatLng = new LatLng(lat, lng);
+                        recommendWalkingRoute(goalLatLng);
+                    } else {
+                        Toast.makeText(MapsNaverActivity.this, "목적지를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Toast.makeText(MapsNaverActivity.this, "지오코딩 요청 실패: " + response.message(), Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<GeocodingResponse> call, Throwable t) {
+                Log.e("NAVER_MAPS", "지오코딩 요청 실패: " + t.getMessage(), t);
+                Toast.makeText(MapsNaverActivity.this, "지오코딩 요청 실패: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
     // 경로 추천 기능
-    private void recommendWalkingRoute() {
-        // 현재 위치 또는 고정된 출발지 사용
-        LatLng startLatLng = START_LATLNG; // 고정된 출발지로 변경
-        LatLng goalLatLng = GOAL_LATLNG; // 목적지
+    private void recommendWalkingRoute(LatLng goalLatLng) {
+        LatLng startLatLng = currentLatLng; // 현재 위치
+        if (startLatLng == null) {
+            Toast.makeText(this, "현재 위치를 가져올 수 없습니다.", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         String start = startLatLng.longitude + "," + startLatLng.latitude;
         String goal = goalLatLng.longitude + "," + goalLatLng.latitude;
