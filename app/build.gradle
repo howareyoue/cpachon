@@ -74,6 +74,9 @@ dependencies {
 
     // 네이버 지도 SDK 의존성
     implementation 'com.naver.maps:map-sdk:3.18.0'
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+
 
     // 위치 추적을 위한 Google Play 서비스
     implementation 'com.google.android.gms:play-services-location:21.3.0'
