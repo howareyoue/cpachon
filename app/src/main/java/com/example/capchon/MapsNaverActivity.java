@@ -14,6 +14,7 @@ import com.naver.maps.map.CameraUpdate;
 import com.naver.maps.map.MapView;
 import com.naver.maps.map.NaverMap;
 import com.naver.maps.map.OnMapReadyCallback;
+import com.naver.maps.map.overlay.Marker;
 import com.naver.maps.map.overlay.PolylineOverlay;
 import com.naver.maps.map.util.FusedLocationSource;
 import com.naver.maps.map.NaverMapSdk;
@@ -109,7 +110,8 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
                         double lat = results.get(0).y; // 위도
                         double lng = results.get(0).x; // 경도
                         LatLng goalLatLng = new LatLng(lat, lng);
-                        recommendWalkingRoute(goalLatLng);
+                        markDestination(goalLatLng); // 목적지 마커 표시
+                        drawRouteToDestination(goalLatLng); // 경로 그리기
                     } else {
                         Toast.makeText(MapsNaverActivity.this, "목적지를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
                     }
@@ -126,8 +128,15 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
         });
     }
 
+    // 목적지에 마커 표시
+    private void markDestination(LatLng goalLatLng) {
+        Marker marker = new Marker();
+        marker.setPosition(goalLatLng);
+        marker.setMap(naverMap);
+    }
+
     // 경로 추천 기능
-    private void recommendWalkingRoute(LatLng goalLatLng) {
+    private void drawRouteToDestination(LatLng goalLatLng) {
         LatLng startLatLng = currentLatLng; // 현재 위치
         if (startLatLng == null) {
             Toast.makeText(this, "현재 위치를 가져올 수 없습니다.", Toast.LENGTH_SHORT).show();
@@ -162,7 +171,7 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
                             polyline.setCoords(coords);
                             polyline.setMap(naverMap);
 
-                            Toast.makeText(MapsNaverActivity.this, "경로를 따라 이동하세요.", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(MapsNaverActivity.this, "목적지까지의 경로가 표시되었습니다.", Toast.LENGTH_SHORT).show();
                         } else {
                             Toast.makeText(MapsNaverActivity.this, "경로를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
                         }
