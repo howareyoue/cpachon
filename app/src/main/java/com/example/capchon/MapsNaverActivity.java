@@ -183,7 +183,6 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
             }
         });
     }
-
     private interface GeocodingCallback {
         void onLatLngReceived(LatLng latLng);
     }
