@@ -167,15 +167,18 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
                         LatLng latLng = new LatLng(Double.parseDouble(address.y), Double.parseDouble(address.x));
                         callback.onLatLngReceived(latLng);
                     } else {
+                        Log.e("Geocoding", "유효하지 않은 주소입니다."); // 유효하지 않은 주소 로깅
                         callback.onLatLngReceived(null);
                     }
                 } else {
+                    Log.e("Geocoding", "API 요청 실패: " + response.message()); // API 요청 실패 로깅
                     callback.onLatLngReceived(null);
                 }
             }
 
             @Override
             public void onFailure(Call<GeocodingResponse> call, Throwable t) {
+                Log.e("Geocoding", "API 호출 실패: " + t.getMessage(), t);
                 callback.onLatLngReceived(null);
             }
         });
