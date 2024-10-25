@@ -9,7 +9,6 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.capchon.DirectionsResponse;
 import com.naver.maps.geometry.LatLng;
 import com.naver.maps.map.CameraUpdate;
 import com.naver.maps.map.MapView;
@@ -45,13 +44,15 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
     private EditText etDestination;
     private Button btnRecommendRoute;
 
+    // 국립목포대학교 공과대학 4호관의 좌표
+    private static final LatLng START_LATLNG = new LatLng(34.810186, 126.392073); // 국립목포대학교 공과대학 4호관 좌표
+    // 청계중학교의 좌표
+    private static final LatLng GOAL_LATLNG = new LatLng(34.855506, 126.418888); // 전남 무안 청계중학교 좌표
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps_naver);
-
-        // 목적지 입력 필드 초기화
-        etDestination = findViewById(R.id.et_destination);
 
         // Naver Map SDK 초기화
         NaverMapSdk.getInstance(this).setClient(new NaverMapSdk.NaverCloudPlatformClient(CLIENT_ID));
@@ -73,7 +74,7 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
 
         // 경로 추천 버튼 클릭 리스너
         btnRecommendRoute.setOnClickListener(v -> {
-            if (naverMap != null && currentLatLng != null) {
+            if (naverMap != null) {
                 recommendWalkingRoute();
             }
         });
@@ -99,15 +100,9 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
 
     // 경로 추천 기능
     private void recommendWalkingRoute() {
-        // 현재 위치
-        LatLng startLatLng = currentLatLng;
-        // 청계중학교 좌표
-        LatLng goalLatLng = new LatLng(37.566084, 126.977243);
-
-        if (startLatLng == null) {
-            Toast.makeText(this, "현재 위치를 가져올 수 없습니다.", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        // 현재 위치 또는 고정된 출발지 사용
+        LatLng startLatLng = START_LATLNG; // 고정된 출발지로 변경
+        LatLng goalLatLng = GOAL_LATLNG; // 목적지
 
         String start = startLatLng.longitude + "," + startLatLng.latitude;
         String goal = goalLatLng.longitude + "," + goalLatLng.latitude;
