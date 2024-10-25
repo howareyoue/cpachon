@@ -30,8 +30,8 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCallback {
 
-    private static final String CLIENT_ID = "u6nzkkp800"; // 네이버 Client ID
-    private static final String CLIENT_SECRET = "IcZEWMnaSNuwEzEuebVII3IUUUlzxoGZvz23NaNR"; // 네이버 Client Secret
+    public static final String CLIENT_ID ="u6nzkkp800" ;
+    public static final String CLIENT_SECRET = "IcZEWMnaSNuwEzEuebVII3IUUUlzxoGZvz23NaNR";// 네이버 Client Secret
     private static final String BASE_URL = "https://naveropenapi.apigw.ntruss.com/";
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1000;
 
@@ -47,7 +47,7 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_maps_naver);
+        setContentView(R.layout.activity_maps_naver); // XML 레이아웃
 
         etDestination = findViewById(R.id.et_destination);
         mapView = findViewById(R.id.map_view);
@@ -71,8 +71,8 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
             if (naverMap != null && currentLatLng != null) {
                 String destinationAddress = etDestination.getText().toString();
                 if (!destinationAddress.isEmpty()) {
-                    // 직접적으로 경로 추천
-                    recommendWalkingRoute(destinationAddress);
+                    // 주소로 경로 추천
+                    getCoordinatesFromAddress(destinationAddress);
                 } else {
                     Toast.makeText(this, "목적지를 입력해주세요.", Toast.LENGTH_SHORT).show();
                 }
@@ -96,13 +96,33 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
         });
     }
 
-    // 경로 추천 기능
-    private void recommendWalkingRoute(String destinationAddress) {
-        // 목적지의 위도와 경도를 설정합니다. (예: 무안 청계중학교)
-        double destinationLat = 34.807164; // 무안 청계중학교 위도
-        double destinationLng = 126.429870; // 무안 청계중학교 경도
-        LatLng goalLatLng = new LatLng(destinationLat, destinationLng);
+    // 주소를 좌표로 변환하는 메서드
+    private void getCoordinatesFromAddress(String address) {
+        // Geocoding API 호출
+        Call<GeocodingResponse> call = directionsService.getCoordinates(CLIENT_ID, CLIENT_SECRET, address);
+        call.enqueue(new Callback<GeocodingResponse>() {
+            @Override
+            public void onResponse(Call<GeocodingResponse> call, Response<GeocodingResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    double lat = response.body().addresses.get(0).y; // 위도
+                    double lng = response.body().addresses.get(0).x; // 경도
+                    LatLng destinationLatLng = new LatLng(lat, lng);
+                    recommendWalkingRoute(destinationLatLng);
+                } else {
+                    Toast.makeText(MapsNaverActivity.this, "주소를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
+                }
+            }
 
+            @Override
+            public void onFailure(Call<GeocodingResponse> call, Throwable t) {
+                Log.e("NAVER_MAPS", "주소 변환 실패: " + t.getMessage());
+                Toast.makeText(MapsNaverActivity.this, "주소 변환 실패: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    // 경로 추천 기능
+    private void recommendWalkingRoute(LatLng destinationLatLng) {
         LatLng startLatLng = currentLatLng; // 현재 위치
         if (startLatLng == null) {
             Toast.makeText(this, "현재 위치를 가져올 수 없습니다.", Toast.LENGTH_SHORT).show();
@@ -110,7 +130,7 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
         }
 
         String start = startLatLng.longitude + "," + startLatLng.latitude;
-        String goal = goalLatLng.longitude + "," + goalLatLng.latitude;
+        String goal = destinationLatLng.longitude + "," + destinationLatLng.latitude;
 
         // API 호출
         Call<DirectionsResponse> call = directionsService.getWalkingRoute(CLIENT_ID, CLIENT_SECRET, start, goal, "shortest");
