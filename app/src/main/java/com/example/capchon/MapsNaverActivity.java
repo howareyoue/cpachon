@@ -50,13 +50,10 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps_naver);
 
-        // 목적지 입력 필드 초기화
         etDestination = findViewById(R.id.et_destination);
 
-        // Naver Map SDK 초기화
         NaverMapSdk.getInstance(this).setClient(new NaverMapSdk.NaverCloudPlatformClient(CLIENT_ID));
 
-        // View 초기화
         mapView = findViewById(R.id.map_view);
         btnRecommendRoute = findViewById(R.id.btn_recommend_route);
 
@@ -72,7 +69,6 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
         directionsService = retrofit.create(NaverDirectionsService.class);
         geocodingService = retrofit.create(GeocodingService.class);
 
-        // 경로 추천 버튼 클릭 리스너
         btnRecommendRoute.setOnClickListener(v -> {
             if (naverMap != null && currentLatLng != null) {
                 recommendWalkingRoute();
@@ -87,10 +83,8 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
         this.naverMap = naverMap;
         naverMap.setLocationSource(locationSource);
 
-        // 위치 추적 모드 설정
         naverMap.setLocationTrackingMode(LocationTrackingMode.Follow);
 
-        // 현재 위치 가져오기
         naverMap.addOnLocationChangeListener(location -> {
             currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
             CameraUpdate cameraUpdate = CameraUpdate.scrollTo(currentLatLng);
@@ -98,7 +92,6 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
         });
     }
 
-    // 경로 추천 기능
     private void recommendWalkingRoute() {
         String destination = etDestination.getText().toString().trim();
 
@@ -117,7 +110,7 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
                 String start = currentLatLng.longitude + "," + currentLatLng.latitude;
                 String goal = goalLatLng.longitude + "," + goalLatLng.latitude;
 
-                Call<DirectionsResponse> call = directionsService.getWalkingRoute("u6nzkkp800", "pTQBJXJxzwgiafqynJnFv3kWloFQKTdBUjkFukt1", start, goal, "shortest");
+                Call<DirectionsResponse> call = directionsService.getWalkingRoute(CLIENT_ID, CLIENT_SECRET, start, goal, "shortest");
 
                 call.enqueue(new Callback<DirectionsResponse>() {
                     @Override
@@ -162,8 +155,6 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
         });
     }
 
-
-    // 목적지를 Geocoding API로 좌표로 변환하는 메소드
     private void getLatLngFromGeocoding(String destination, GeocodingCallback callback) {
         Call<GeocodingResponse> call = geocodingService.getGeocode(CLIENT_ID, CLIENT_SECRET, destination);
         call.enqueue(new Callback<GeocodingResponse>() {
@@ -190,7 +181,6 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
         });
     }
 
-    // Geocoding API 응답을 처리하는 인터페이스
     private interface GeocodingCallback {
         void onLatLngReceived(LatLng latLng);
     }
