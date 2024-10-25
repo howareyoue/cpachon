@@ -9,7 +9,7 @@ public interface NaverDirectionsService {
     @GET("map-direction/v1/walking")
     Call<DirectionsResponse> getWalkingRoute(
             @Header("u6nzkkp800") String clientId,
-            @Header("pTQBJXJxzwgiafqynJnFv3kWloFQKTdBUjkFukt1") String clientSecret,
+            @Header("IcZEWMnaSNuwEzEuebVII3IUUUlzxoGZvz23NaNR") String clientSecret,
             @Query("start") String start,
             @Query("goal") String goal,
             @Query("option") String option

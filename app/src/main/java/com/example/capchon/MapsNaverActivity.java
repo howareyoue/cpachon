@@ -31,7 +31,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private static final String CLIENT_ID = "u6nzkkp800"; // 네이버 Client ID
-    private static final String CLIENT_SECRET = "pTQBJXJxzwgiafqynJnFv3kWloFQKTdBUjkFukt1"; // 네이버 Client Secret
+    private static final String CLIENT_SECRET = "IcZEWMnaSNuwEzEuebVII3IUUUlzxoGZvz23NaNR"; // 네이버 Client Secret
     private static final String BASE_URL = "https://naveropenapi.apigw.ntruss.com/";
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1000;
 
