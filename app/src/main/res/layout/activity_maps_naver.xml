@@ -1,23 +1,26 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
+    <com.naver.maps.map.MapView
+        android:id="@+id/map_view"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <!-- 목적지 입력 필드 -->
     <EditText
         android:id="@+id/et_destination"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="목적지를 입력하세요" />
 
+    <!-- 경로 추천 버튼 -->
     <Button
-        android:id="@+id/btn_find_destination"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="목적지 찾기" />
-
-    <com.naver.maps.map.MapView
-        android:id="@+id/map_view"
+        android:id="@+id/btn_recommend_route"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-
+        android:layout_height="wrap_content"
+        android:text="경로 추천" />
 </LinearLayout>
