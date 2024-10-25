@@ -14,7 +14,6 @@ import com.naver.maps.map.CameraUpdate;
 import com.naver.maps.map.MapView;
 import com.naver.maps.map.NaverMap;
 import com.naver.maps.map.OnMapReadyCallback;
-import com.naver.maps.map.overlay.Marker;
 import com.naver.maps.map.overlay.PolylineOverlay;
 import com.naver.maps.map.util.FusedLocationSource;
 import com.naver.maps.map.NaverMapSdk;
@@ -42,7 +41,6 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
     private LatLng currentLatLng;
     private PolylineOverlay polyline;
     private NaverDirectionsService directionsService;
-    private GeocodingService geocodingService; // 추가된 부분
     private EditText etDestination;
     private Button btnRecommendRoute;
 
@@ -67,14 +65,14 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
                 .build();
 
         directionsService = retrofit.create(NaverDirectionsService.class);
-        geocodingService = retrofit.create(GeocodingService.class); // 추가된 부분
 
         // 경로 추천 버튼 클릭 리스너
         btnRecommendRoute.setOnClickListener(v -> {
             if (naverMap != null && currentLatLng != null) {
                 String destinationAddress = etDestination.getText().toString();
                 if (!destinationAddress.isEmpty()) {
-                    getGeocodeAndRecommendRoute(destinationAddress);
+                    // 경로 추천
+                    recommendWalkingRoute(destinationAddress);
                 } else {
                     Toast.makeText(this, "목적지를 입력해주세요.", Toast.LENGTH_SHORT).show();
                 }
@@ -98,56 +96,22 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
         });
     }
 
-    // 지오코딩을 통해 주소를 위도/경도로 변환 후 경로 추천
-    private void getGeocodeAndRecommendRoute(String address) {
-        Call<GeocodingResponse> call = geocodingService.getGeocode(CLIENT_ID, CLIENT_SECRET, address);
-        call.enqueue(new Callback<GeocodingResponse>() {
-            @Override
-            public void onResponse(Call<GeocodingResponse> call, Response<GeocodingResponse> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    List<GeocodingResponse.GeocodingResult> results = response.body().addresses;
-                    if (results != null && !results.isEmpty()) {
-                        double lat = results.get(0).y; // 위도
-                        double lng = results.get(0).x; // 경도
-                        LatLng goalLatLng = new LatLng(lat, lng);
-                        markDestination(goalLatLng); // 목적지 마커 표시
-                        drawRouteToDestination(goalLatLng); // 경로 그리기
-                    } else {
-                        Toast.makeText(MapsNaverActivity.this, "목적지를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
-                    }
-                } else {
-                    Toast.makeText(MapsNaverActivity.this, "지오코딩 요청 실패: " + response.message(), Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<GeocodingResponse> call, Throwable t) {
-                Log.e("NAVER_MAPS", "지오코딩 요청 실패: " + t.getMessage(), t);
-                Toast.makeText(MapsNaverActivity.this, "지오코딩 요청 실패: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
-    // 목적지에 마커 표시
-    private void markDestination(LatLng goalLatLng) {
-        Marker marker = new Marker();
-        marker.setPosition(goalLatLng);
-        marker.setMap(naverMap);
-    }
-
     // 경로 추천 기능
-    private void drawRouteToDestination(LatLng goalLatLng) {
-        LatLng startLatLng = currentLatLng; // 현재 위치
+    private void recommendWalkingRoute(String destinationAddress) {
+        // 현재 위치
+        LatLng startLatLng = currentLatLng;
         if (startLatLng == null) {
             Toast.makeText(this, "현재 위치를 가져올 수 없습니다.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        String start = startLatLng.longitude + "," + startLatLng.latitude;
-        String goal = goalLatLng.longitude + "," + goalLatLng.latitude;
-
         // API 호출
-        Call<DirectionsResponse> call = directionsService.getWalkingRoute(CLIENT_ID, CLIENT_SECRET, start, goal, "shortest");
+        Call<DirectionsResponse> call = directionsService.getWalkingRoute(
+                CLIENT_ID, CLIENT_SECRET,
+                startLatLng.longitude + "," + startLatLng.latitude, // 시작 위치
+                destinationAddress, // 목적지 주소
+                "shortest"
+        );
 
         call.enqueue(new Callback<DirectionsResponse>() {
             @Override
@@ -171,7 +135,7 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
                             polyline.setCoords(coords);
                             polyline.setMap(naverMap);
 
-                            Toast.makeText(MapsNaverActivity.this, "목적지까지의 경로가 표시되었습니다.", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(MapsNaverActivity.this, "경로를 따라 이동하세요.", Toast.LENGTH_SHORT).show();
                         } else {
                             Toast.makeText(MapsNaverActivity.this, "경로를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
                         }
@@ -186,7 +150,7 @@ public class MapsNaverActivity extends AppCompatActivity implements OnMapReadyCa
 
             @Override
             public void onFailure(Call<DirectionsResponse> call, Throwable t) {
-                Log.e("NAVER_MAPS", "경로 요청 실패: " + t.getMessage(), t);
+                Log.e("NAVER_MAPS", "경로 요청 실패: " + t.getMessage());
                 Toast.makeText(MapsNaverActivity.this, "경로 요청 실패: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
