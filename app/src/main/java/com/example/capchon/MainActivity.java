@@ -41,7 +41,7 @@ public class MainActivity extends AppCompatActivity {
         btn_m.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(getApplicationContext(), MapsNaverActivity.class);startActivity(intent);
+                Intent intent = new Intent(getApplicationContext(), MapNaverActivity.class);startActivity(intent);
             }
         });
         Button btn_c = findViewById(R.id.btn_c);
