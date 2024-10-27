@@ -32,7 +32,7 @@
 
 
         <activity
-            android:name=".MapsNaverActivity"
+            android:name=".MapNaverActivity"
             android:exported="false" />
         <activity
             android:name=".RegisterActivity"
