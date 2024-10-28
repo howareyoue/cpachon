@@ -12,13 +12,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.naver.maps.geometry.LatLng;
 import com.naver.maps.map.CameraUpdate;
 import com.naver.maps.map.MapView;
-import com.naver.maps.map.NaverMapSdk;
 import com.naver.maps.map.OnMapReadyCallback;
 import com.naver.maps.map.NaverMap;
 import com.naver.maps.map.overlay.Marker;
 import com.naver.maps.map.overlay.PolylineOverlay;
 import com.naver.maps.map.util.FusedLocationSource;
 import com.naver.maps.map.LocationTrackingMode;
+import com.naver.maps.map.NaverMapSdk;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,8 +31,8 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCallback {
 
-    private static final String CLIENT_ID = "u6nzkkp800"; // 네이버 클라우드 플랫폼 클라이언트 ID
-    private static final String CLIENT_SECRET = "IcZEWMnaSNuwEzEuebVII3IUUUlzxoGZvz23NaNR"; // 네이버 클라우드 플랫폼 클라이언트 비밀번호
+    private static final String CLIENT_ID = "u6nzkkp800";
+    private static final String CLIENT_SECRET = "IcZEWMnaSNuwEzEuebVII3IUUUlzxoGZvz23NaNR";
     private static final String BASE_URL = "https://naveropenapi.apigw.ntruss.com/";
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1000;
 
@@ -127,7 +127,7 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
         String startPoint = start.latitude + "," + start.longitude;
         String endPoint = end.latitude + "," + end.longitude;
 
-        // 도로 기반 경로 요청
+        // "normal"을 사용하여 실제 도로 기반 경로 요청
         directionsService.getDirections(startPoint, endPoint, "normal", CLIENT_ID, CLIENT_SECRET)
                 .enqueue(new Callback<DirectionsResponse>() {
                     @Override
@@ -139,8 +139,7 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
                             for (DirectionsResponse.Route.Leg leg : route.legs) {
                                 for (DirectionsResponse.Route.Leg.Step step : leg.steps) {
                                     for (DirectionsResponse.Route.Leg.Step.Point point : step.path) {
-                                        // latitude와 longitude 대신 lat와 lng 사용
-                                        routeCoords.add(new LatLng(point.lat, point.lng));
+                                        routeCoords.add(new LatLng(point.lat, point.lng)); // lat, lng 사용
                                     }
                                 }
                             }
@@ -149,7 +148,7 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
                             polyline.setMap(naverMap);
                             naverMap.moveCamera(CameraUpdate.scrollTo(end));
                         } else {
-                            drawDefaultRoute(start, end);
+                            // 경로 요청이 실패한 경우
                             Log.e("MapNaverActivity", "경로 응답 실패: " + (response.body() != null ? response.body() : "응답 없음"));
                         }
                     }
@@ -157,22 +156,9 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
                     @Override
                     public void onFailure(Call<DirectionsResponse> call, Throwable t) {
                         Log.e("MapNaverActivity", "경로 요청 실패: " + t.getMessage());
-                        drawDefaultRoute(start, end);
                         Toast.makeText(MapNaverActivity.this, "경로 요청 실패: " + t.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
-    }
-
-
-    private void drawDefaultRoute(LatLng start, LatLng end) {
-        List<LatLng> routeCoords = new ArrayList<>();
-        routeCoords.add(start);
-        routeCoords.add(end);
-
-        polyline.setCoords(routeCoords);
-        polyline.setMap(naverMap);
-        naverMap.moveCamera(CameraUpdate.scrollTo(end));
-        Toast.makeText(this, "기본 경로를 표시했습니다.", Toast.LENGTH_SHORT).show();
     }
 
     @Override
