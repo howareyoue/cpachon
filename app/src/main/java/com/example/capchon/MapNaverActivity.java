@@ -35,8 +35,8 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
 
     private static final String CLIENT_ID = "qeg3laengo";
     private static final String CLIENT_SECRET = "Lgx060Lao80eixwSkcQLMBp8R8TuA8q0gok01dgG";
-    private static final String BASE_URL_GEOCODE = "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/";
-    private static final String BASE_URL_DIRECTION = "https://naveropenapi.apigw.ntruss.com/map-direction/v1/";
+    private static final String BASE_URL_GEOCODE = "https://naveropenapi.apigw.ntruss.com/";
+    private static final String BASE_URL_DIRECTION = "https://naveropenapi.apigw.ntruss.com/";
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1000;
 
     private MapView mapView;
@@ -213,58 +213,5 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
     public void onLowMemory() {
         super.onLowMemory();
         mapView.onLowMemory();
-    }
-
-    // DirectionsResponse 클래스 정의
-    public static class DirectionsResponse {
-        public List<Route> routes;
-
-        public static class Route {
-            public List<Leg> legs;
-
-            public static class Leg {
-                public List<Step> steps;
-
-                public static class Step {
-                    public List<List<Double>> path;
-
-                    public List<LatLng> getLatLngPath() {
-                        List<LatLng> latLngPath = new ArrayList<>();
-                        for (List<Double> point : path) {
-                            if (point.size() >= 2) {
-                                latLngPath.add(new LatLng(point.get(1), point.get(0)));
-                            }
-                        }
-                        return latLngPath;
-                    }
-                }
-            }
-        }
-    }
-
-    // GeocodingResponse 클래스 정의
-    public static class GeocodingResponse {
-        public List<Address> addresses;
-
-        public static class Address {
-            public String roadAddress;
-            public double x;
-            public double y;
-        }
-    }
-
-    // NaverDirectionsService 인터페이스 정의
-    public interface NaverDirectionsService {
-        @GET("https://naveropenapi.apigw.gov-ntruss.com/map-geocode/v2/geocode")
-        Call<GeocodingResponse> getCoordinates(@Query("query") String destination,
-                                               @Query("client_id") String clientId,
-                                               @Query("client_secret") String clientSecret);
-
-        @GET("https://naveropenapi.apigw.gov-ntruss.com/map-direction/v1/driving")
-        Call<DirectionsResponse> getDirections(@Query("start") String start,
-                                               @Query("goal") String goal,
-                                               @Query("option") String option,
-                                               @Query("client_id") String clientId,
-                                               @Query("client_secret") String clientSecret);
     }
 }
