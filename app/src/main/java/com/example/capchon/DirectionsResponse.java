@@ -14,9 +14,10 @@ public class DirectionsResponse {
             public static class Step {
                 public List<Point> path; // 경로 점 리스트
 
+                // Point 클래스 선언
                 public static class Point {
-                    public double latitude;  // 위도
-                    public double longitude; // 경도
+                    public double lat;  // 위도
+                    public double lng; // 경도
                 }
             }
         }
