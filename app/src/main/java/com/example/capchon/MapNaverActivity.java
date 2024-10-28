@@ -12,13 +12,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.naver.maps.geometry.LatLng;
 import com.naver.maps.map.CameraUpdate;
 import com.naver.maps.map.MapView;
+import com.naver.maps.map.NaverMapSdk;
 import com.naver.maps.map.OnMapReadyCallback;
 import com.naver.maps.map.NaverMap;
 import com.naver.maps.map.overlay.Marker;
 import com.naver.maps.map.overlay.PolylineOverlay;
 import com.naver.maps.map.util.FusedLocationSource;
 import com.naver.maps.map.LocationTrackingMode;
-import com.naver.maps.map.NaverMapSdk;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,6 +51,7 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps_naver);
 
+        // NaverMap SDK 초기화
         NaverMapSdk.getInstance(this).setClient(new NaverMapSdk.NaverCloudPlatformClient(CLIENT_ID));
 
         mapView = findViewById(R.id.map_view);
@@ -138,7 +139,7 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
                             for (DirectionsResponse.Route.Leg leg : route.legs) {
                                 for (DirectionsResponse.Route.Leg.Step step : leg.steps) {
                                     for (DirectionsResponse.Route.Leg.Step.Point point : step.path) {
-                                        routeCoords.add(new LatLng(point.latitude, point.longitude));
+                                        routeCoords.add(new LatLng(point.lat, point.lng)); // lat와 lng으로 수정
                                     }
                                 }
                             }
