@@ -127,7 +127,6 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
         String startPoint = start.latitude + "," + start.longitude;
         String endPoint = end.latitude + "," + end.longitude;
 
-        // 실제 도로 경로를 사용하기 위해 option을 'real_road'로 설정
         directionsService.getDirections(startPoint, endPoint, "real_road", CLIENT_ID, CLIENT_SECRET)
                 .enqueue(new Callback<DirectionsResponse>() {
                     @Override
@@ -136,9 +135,12 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
                             List<LatLng> routeCoords = new ArrayList<>();
                             DirectionsResponse.Route route = response.body().routes.get(0);
 
-                            // 경로의 각 좌표를 Polyline으로 표시
-                            for (DirectionsResponse.Route.Coordinate coord : route.path) {
-                                routeCoords.add(new LatLng(coord.y, coord.x));
+                            for (DirectionsResponse.Route.Leg leg : route.legs) {
+                                for (DirectionsResponse.Route.Leg.Step step : leg.steps) {
+                                    for (DirectionsResponse.Route.Leg.Step.Point point : step.path) {
+                                        routeCoords.add(new LatLng(point.latitude, point.longitude));
+                                    }
+                                }
                             }
 
                             polyline.setCoords(routeCoords);
