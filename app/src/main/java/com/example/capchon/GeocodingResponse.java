@@ -10,4 +10,5 @@ public class GeocodingResponse {
         public double x;
         public double y;
     }
+
 }
