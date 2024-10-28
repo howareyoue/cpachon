@@ -127,7 +127,7 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
         String startPoint = start.latitude + "," + start.longitude;
         String endPoint = end.latitude + "," + end.longitude;
 
-        directionsService.getDirections(startPoint, endPoint, "traffic", CLIENT_ID, CLIENT_SECRET)
+        directionsService.getDirections(startPoint, endPoint, "pedestrian", CLIENT_ID, CLIENT_SECRET)
                 .enqueue(new Callback<DirectionsResponse>() {
                     @Override
                     public void onResponse(Call<DirectionsResponse> call, Response<DirectionsResponse> response) {
@@ -135,17 +135,14 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
                             List<LatLng> routeCoords = new ArrayList<>();
                             DirectionsResponse.Route route = response.body().routes.get(0);
 
-                            // summary의 시작과 끝 좌표를 Polyline으로 표시
-                            if (route.summary != null) {
-                                routeCoords.add(new LatLng(route.summary.start.y, route.summary.start.x));
-                                routeCoords.add(new LatLng(route.summary.end.y, route.summary.end.x));
-
-                                polyline.setCoords(routeCoords);
-                                polyline.setMap(naverMap);
-                                naverMap.moveCamera(CameraUpdate.scrollTo(end));
-                            } else {
-                                Toast.makeText(MapNaverActivity.this, "경로 데이터가 없습니다.", Toast.LENGTH_SHORT).show();
+                            // 경로의 각 좌표를 Polyline으로 표시
+                            for (DirectionsResponse.Route.Coordinate coord : route.path) {
+                                routeCoords.add(new LatLng(coord.y, coord.x));
                             }
+
+                            polyline.setCoords(routeCoords);
+                            polyline.setMap(naverMap);
+                            naverMap.moveCamera(CameraUpdate.scrollTo(end));
                         } else {
                             drawDefaultRoute(start, end);
                             Log.e("MapNaverActivity", "경로 응답 실패: " + (response.body() != null ? response.body() : "응답 없음"));
