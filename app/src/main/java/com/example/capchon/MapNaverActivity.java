@@ -31,8 +31,8 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCallback {
 
-    private static final String CLIENT_ID = "u6nzkkp800";
-    private static final String CLIENT_SECRET = "IcZEWMnaSNuwEzEuebVII3IUUUlzxoGZvz23NaNR";
+    private static final String CLIENT_ID = "u6nzkkp800"; // 네이버 클라우드 플랫폼 클라이언트 ID
+    private static final String CLIENT_SECRET = "IcZEWMnaSNuwEzEuebVII3IUUUlzxoGZvz23NaNR"; // 네이버 클라우드 플랫폼 클라이언트 비밀번호
     private static final String BASE_URL = "https://naveropenapi.apigw.ntruss.com/";
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1000;
 
@@ -51,7 +51,6 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps_naver);
 
-        // NaverMap SDK 초기화
         NaverMapSdk.getInstance(this).setClient(new NaverMapSdk.NaverCloudPlatformClient(CLIENT_ID));
 
         mapView = findViewById(R.id.map_view);
@@ -128,7 +127,8 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
         String startPoint = start.latitude + "," + start.longitude;
         String endPoint = end.latitude + "," + end.longitude;
 
-        directionsService.getDirections(startPoint, endPoint, "real_road", CLIENT_ID, CLIENT_SECRET)
+        // 도로 기반 경로 요청
+        directionsService.getDirections(startPoint, endPoint, "normal", CLIENT_ID, CLIENT_SECRET)
                 .enqueue(new Callback<DirectionsResponse>() {
                     @Override
                     public void onResponse(Call<DirectionsResponse> call, Response<DirectionsResponse> response) {
@@ -139,7 +139,8 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
                             for (DirectionsResponse.Route.Leg leg : route.legs) {
                                 for (DirectionsResponse.Route.Leg.Step step : leg.steps) {
                                     for (DirectionsResponse.Route.Leg.Step.Point point : step.path) {
-                                        routeCoords.add(new LatLng(point.lat, point.lng)); // lat와 lng으로 수정
+                                        // latitude와 longitude 대신 lat와 lng 사용
+                                        routeCoords.add(new LatLng(point.lat, point.lng));
                                     }
                                 }
                             }
@@ -161,6 +162,7 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
                     }
                 });
     }
+
 
     private void drawDefaultRoute(LatLng start, LatLng end) {
         List<LatLng> routeCoords = new ArrayList<>();
