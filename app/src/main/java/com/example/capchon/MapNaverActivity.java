@@ -127,7 +127,8 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
         String startPoint = start.latitude + "," + start.longitude;
         String endPoint = end.latitude + "," + end.longitude;
 
-        directionsService.getDirections(startPoint, endPoint, "pedestrian", CLIENT_ID, CLIENT_SECRET)
+        // 실제 도로 경로를 사용하기 위해 option을 'real_road'로 설정
+        directionsService.getDirections(startPoint, endPoint, "real_road", CLIENT_ID, CLIENT_SECRET)
                 .enqueue(new Callback<DirectionsResponse>() {
                     @Override
                     public void onResponse(Call<DirectionsResponse> call, Response<DirectionsResponse> response) {
