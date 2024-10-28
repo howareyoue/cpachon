@@ -28,12 +28,15 @@ import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
+import retrofit2.http.GET;
+import retrofit2.http.Query;
 
 public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCallback {
 
-    private static final String CLIENT_ID = "u6nzkkp800";
-    private static final String CLIENT_SECRET = "IcZEWMnaSNuwEzEuebVII3IUUUlzxoGZvz23NaNR";
-    private static final String BASE_URL = "https://naveropenapi.apigw.ntruss.com/";
+    private static final String CLIENT_ID = "qeg3laengo";
+    private static final String CLIENT_SECRET = "Lgx060Lao80eixwSkcQLMBp8R8TuA8q0gok01dgG";
+    private static final String BASE_URL_GEOCODE = "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/";
+    private static final String BASE_URL_DIRECTION = "https://naveropenapi.apigw.ntruss.com/map-direction/v1/";
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1000;
 
     private MapView mapView;
@@ -41,7 +44,6 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
     private FusedLocationSource locationSource;
     private LatLng currentLatLng;
     private PolylineOverlay polyline;
-    private NaverDirectionsService directionsService;
     private EditText etDestination;
     private Button btnRecommendRoute;
     private Marker destinationMarker;
@@ -60,13 +62,6 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
 
         mapView.getMapAsync(this);
         locationSource = new FusedLocationSource(this, LOCATION_PERMISSION_REQUEST_CODE);
-
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(BASE_URL)
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
-
-        directionsService = retrofit.create(NaverDirectionsService.class);
 
         btnRecommendRoute.setOnClickListener(v -> {
             if (naverMap != null && currentLatLng != null) {
@@ -96,6 +91,19 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
         if (destinationMarker != null) {
             destinationMarker.setMap(null);
         }
+
+        getCoordinates(destination);
+    }
+
+    private void getCoordinates(String destination) {
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(BASE_URL_GEOCODE)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        NaverDirectionsService directionsService = retrofit.create(NaverDirectionsService.class);
+        Log.d("MapNaverActivity", "CLIENT_ID: " + CLIENT_ID);
+        Log.d("MapNaverActivity", "CLIENT_SECRET: " + CLIENT_SECRET);
 
         directionsService.getCoordinates(destination, CLIENT_ID, CLIENT_SECRET).enqueue(new Callback<GeocodingResponse>() {
             @Override
@@ -127,29 +135,39 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
         String startPoint = start.latitude + "," + start.longitude;
         String endPoint = end.latitude + "," + end.longitude;
 
-        // "normal"을 사용하여 실제 도로 기반 경로 요청
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(BASE_URL_DIRECTION)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        NaverDirectionsService directionsService = retrofit.create(NaverDirectionsService.class);
         directionsService.getDirections(startPoint, endPoint, "normal", CLIENT_ID, CLIENT_SECRET)
                 .enqueue(new Callback<DirectionsResponse>() {
                     @Override
                     public void onResponse(Call<DirectionsResponse> call, Response<DirectionsResponse> response) {
-                        if (response.isSuccessful() && response.body() != null && response.body().routes != null && !response.body().routes.isEmpty()) {
+                        boolean routesNotNull = response.body() != null && response.body().routes != null;
+                        boolean routesNotEmpty = routesNotNull && !response.body().routes.isEmpty();
+
+                        Log.d("MapNaverActivity", "routesNotNull: " + routesNotNull);
+                        Log.d("MapNaverActivity", "routesNotEmpty: " + routesNotEmpty);
+
+                        if (routesNotNull && routesNotEmpty) {
                             List<LatLng> routeCoords = new ArrayList<>();
                             DirectionsResponse.Route route = response.body().routes.get(0);
 
                             for (DirectionsResponse.Route.Leg leg : route.legs) {
                                 for (DirectionsResponse.Route.Leg.Step step : leg.steps) {
-                                    for (DirectionsResponse.Route.Leg.Step.Point point : step.path) {
-                                        routeCoords.add(new LatLng(point.lat, point.lng)); // lat, lng 사용
-                                    }
+                                    routeCoords.addAll(step.getLatLngPath());
                                 }
                             }
 
+                            polyline.setMap(null);
                             polyline.setCoords(routeCoords);
                             polyline.setMap(naverMap);
                             naverMap.moveCamera(CameraUpdate.scrollTo(end));
                         } else {
-                            // 경로 요청이 실패한 경우
                             Log.e("MapNaverActivity", "경로 응답 실패: " + (response.body() != null ? response.body() : "응답 없음"));
+                            Toast.makeText(MapNaverActivity.this, "경로를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
                         }
                     }
 
@@ -195,5 +213,58 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
     public void onLowMemory() {
         super.onLowMemory();
         mapView.onLowMemory();
+    }
+
+    // DirectionsResponse 클래스 정의
+    public static class DirectionsResponse {
+        public List<Route> routes;
+
+        public static class Route {
+            public List<Leg> legs;
+
+            public static class Leg {
+                public List<Step> steps;
+
+                public static class Step {
+                    public List<List<Double>> path;
+
+                    public List<LatLng> getLatLngPath() {
+                        List<LatLng> latLngPath = new ArrayList<>();
+                        for (List<Double> point : path) {
+                            if (point.size() >= 2) {
+                                latLngPath.add(new LatLng(point.get(1), point.get(0)));
+                            }
+                        }
+                        return latLngPath;
+                    }
+                }
+            }
+        }
+    }
+
+    // GeocodingResponse 클래스 정의
+    public static class GeocodingResponse {
+        public List<Address> addresses;
+
+        public static class Address {
+            public String roadAddress;
+            public double x;
+            public double y;
+        }
+    }
+
+    // NaverDirectionsService 인터페이스 정의
+    public interface NaverDirectionsService {
+        @GET("https://naveropenapi.apigw.gov-ntruss.com/map-geocode/v2/geocode")
+        Call<GeocodingResponse> getCoordinates(@Query("query") String destination,
+                                               @Query("client_id") String clientId,
+                                               @Query("client_secret") String clientSecret);
+
+        @GET("https://naveropenapi.apigw.gov-ntruss.com/map-direction/v1/driving")
+        Call<DirectionsResponse> getDirections(@Query("start") String start,
+                                               @Query("goal") String goal,
+                                               @Query("option") String option,
+                                               @Query("client_id") String clientId,
+                                               @Query("client_secret") String clientSecret);
     }
 }
