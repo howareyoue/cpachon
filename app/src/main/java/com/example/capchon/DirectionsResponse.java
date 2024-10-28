@@ -4,29 +4,20 @@ import com.google.gson.annotations.SerializedName;
 import java.util.List;
 
 public class DirectionsResponse {
-    @SerializedName("routes")
     public List<Route> routes;
 
-    public class Route {
-        @SerializedName("legs")
-        public List<Leg> legs;
+    public static class Route {
+        public Summary summary;  // 요약 정보만 사용하여 최단 경로 표시
     }
 
-    public class Leg {
-        @SerializedName("steps")
-        public List<Step> steps;
+    public static class Summary {
+        public Coordinate start;
+        public Coordinate end;
     }
 
-    public class Step {
-        @SerializedName("path")
-        public List<Path> path;
-
-        public class Path {
-            @SerializedName("latitude")
-            public double latitude;
-
-            @SerializedName("longitude")
-            public double longitude;
-        }
+    public static class Coordinate {
+        public double x;
+        public double y;
     }
 }
+

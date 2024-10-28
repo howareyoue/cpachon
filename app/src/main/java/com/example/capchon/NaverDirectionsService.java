@@ -13,7 +13,7 @@ public interface NaverDirectionsService {
             @Header("X-NCP-APIGW-API-KEY") String clientSecret
     );
 
-    @GET("map-direction/v1/walking")
+    @GET("map-direction/v1/driving")
     Call<DirectionsResponse> getDirections(
             @Query("start") String start,
             @Query("goal") String end,

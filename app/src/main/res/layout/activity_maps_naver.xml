@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -11,25 +12,21 @@
         android:id="@+id/et_destination"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_marginBottom="56dp"
-        android:layout_centerHorizontal="true"
-        android:hint="목적지 입력"/>
+        android:hint="목적지를 입력하세요"
+        android:layout_alignParentTop="true" />
 
     <Button
         android:id="@+id/btn_recommend_route"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:text="경로 추천"/>
+        android:text="경로 추천"
+        android:layout_below="@id/et_destination" />
 
     <Button
         android:id="@+id/btn_current_location"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_above="@id/et_destination"
-        android:layout_centerHorizontal="true"
-        android:text="현재 위치로"/>
+        android:text="현재 위치로 이동"
+        android:layout_below="@id/btn_recommend_route" />
 
 </RelativeLayout>
