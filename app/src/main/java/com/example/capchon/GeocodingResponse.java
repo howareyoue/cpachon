@@ -8,7 +8,7 @@ public class GeocodingResponse {
     public static class Address {
         public String roadAddress; // 도로명 주소
         public String jibunAddress; // 지번 주소
-        public double x; // 경도
-        public double y; // 위도
+        public String x; // 경도
+        public String y; // 위도
     }
 }

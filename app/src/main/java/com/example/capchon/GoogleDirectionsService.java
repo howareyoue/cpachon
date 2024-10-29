@@ -5,7 +5,7 @@ import retrofit2.http.GET;
 import retrofit2.http.Query;
 
 public interface GoogleDirectionsService {
-    @GET("json")
+    @GET("maps/api/directions/json")
     Call<GoogleDirectionsResponse> getDirections(
             @Query("origin") String origin,
             @Query("destination") String destination,
