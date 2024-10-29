@@ -23,20 +23,20 @@ import com.naver.maps.map.NaverMapSdk;
 import java.util.ArrayList;
 import java.util.List;
 
+import okhttp3.Interceptor;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
-import retrofit2.http.GET;
-import retrofit2.http.Query;
 
 public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private static final String CLIENT_ID = "qeg3laengo";
     private static final String CLIENT_SECRET = "Lgx060Lao80eixwSkcQLMBp8R8TuA8q0gok01dgG";
-    private static final String BASE_URL_GEOCODE = "https://naveropenapi.apigw.ntruss.com/";
-    private static final String BASE_URL_DIRECTION = "https://naveropenapi.apigw.ntruss.com/";
+    private static final String BASE_URL = "https://naveropenapi.apigw.ntruss.com/";
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1000;
 
     private MapView mapView;
@@ -81,6 +81,24 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
         });
     }
 
+    private Retrofit createRetrofitClient() {
+        OkHttpClient client = new OkHttpClient.Builder()
+                .addInterceptor(chain -> {
+                    Request request = chain.request().newBuilder()
+                            .addHeader("X-NCP-APIGW-API-KEY-ID", CLIENT_ID)
+                            .addHeader("X-NCP-APIGW-API-KEY", CLIENT_SECRET)
+                            .build();
+                    return chain.proceed(request);
+                })
+                .build();
+
+        return new Retrofit.Builder()
+                .baseUrl(BASE_URL)
+                .addConverterFactory(GsonConverterFactory.create())
+                .client(client)
+                .build();
+    }
+
     private void getDirections() {
         String destination = etDestination.getText().toString();
         if (destination.isEmpty()) {
@@ -96,39 +114,36 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
     }
 
     private void getCoordinates(String destination) {
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(BASE_URL_GEOCODE)
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
+        Retrofit retrofit = createRetrofitClient();
+        NaverGeocodingService geocodingService = retrofit.create(NaverGeocodingService.class);
 
-        NaverDirectionsService directionsService = retrofit.create(NaverDirectionsService.class);
-        Log.d("MapNaverActivity", "CLIENT_ID: " + CLIENT_ID);
-        Log.d("MapNaverActivity", "CLIENT_SECRET: " + CLIENT_SECRET);
-
-        directionsService.getCoordinates(destination, CLIENT_ID, CLIENT_SECRET).enqueue(new Callback<GeocodingResponse>() {
+        // CLIENT_ID와 CLIENT_SECRET을 제거한 메서드 호출
+        geocodingService.getCoordinates(destination).enqueue(new Callback<GeocodingResponse>() {
             @Override
             public void onResponse(Call<GeocodingResponse> call, Response<GeocodingResponse> response) {
-                if (response.isSuccessful() && response.body() != null && response.body().addresses != null && !response.body().addresses.isEmpty()) {
+                if (response.isSuccessful() && response.body() != null && !response.body().addresses.isEmpty()) {
                     LatLng destinationLatLng = new LatLng(response.body().addresses.get(0).y, response.body().addresses.get(0).x);
-
-                    destinationMarker = new Marker();
-                    destinationMarker.setPosition(destinationLatLng);
-                    destinationMarker.setMap(naverMap);
-
-                    naverMap.moveCamera(CameraUpdate.scrollTo(destinationLatLng));
+                    setDestinationMarker(destinationLatLng);
                     requestDirections(currentLatLng, destinationLatLng);
                 } else {
-                    Toast.makeText(MapNaverActivity.this, "목적지를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
-                    Log.e("MapNaverActivity", "잘못된 지오코딩 응답: " + (response.body() != null ? response.body().addresses : "응답 없음"));
+                    Log.e("MapNaverActivity", "서버 응답 실패: " + response.errorBody());
+                    Toast.makeText(MapNaverActivity.this, "목적지의 좌표를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
             public void onFailure(Call<GeocodingResponse> call, Throwable t) {
                 Log.e("MapNaverActivity", "지오코딩 요청 실패: " + t.getMessage());
-                Toast.makeText(MapNaverActivity.this, "지오코딩 요청 실패", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MapNaverActivity.this, "지오코딩 요청 실패: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void setDestinationMarker(LatLng destinationLatLng) {
+        destinationMarker = new Marker();
+        destinationMarker.setPosition(destinationLatLng);
+        destinationMarker.setMap(naverMap);
+        naverMap.moveCamera(CameraUpdate.scrollTo(destinationLatLng));
     }
 
     private void requestDirections(LatLng start, LatLng end) {
@@ -136,7 +151,7 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
         String endPoint = end.latitude + "," + end.longitude;
 
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(BASE_URL_DIRECTION)
+                .baseUrl(BASE_URL)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
 
@@ -145,29 +160,37 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
                 .enqueue(new Callback<DirectionsResponse>() {
                     @Override
                     public void onResponse(Call<DirectionsResponse> call, Response<DirectionsResponse> response) {
-                        boolean routesNotNull = response.body() != null && response.body().routes != null;
-                        boolean routesNotEmpty = routesNotNull && !response.body().routes.isEmpty();
+                        if (response.isSuccessful() && response.body() != null) {
+                            DirectionsResponse directionsResponse = response.body();
+                            if (directionsResponse.routes != null && !directionsResponse.routes.isEmpty()) {
+                                // 경로가 정상적으로 반환되었을 경우
+                                List<LatLng> routeCoords = new ArrayList<>();
+                                for (DirectionsResponse.Route route : directionsResponse.routes) {
+                                    for (DirectionsResponse.Route.Leg leg : route.legs) {
+                                        for (DirectionsResponse.Route.Leg.Step step : leg.steps) {
+                                            routeCoords.addAll(step.getLatLngPath());
 
-                        Log.d("MapNaverActivity", "routesNotNull: " + routesNotNull);
-                        Log.d("MapNaverActivity", "routesNotEmpty: " + routesNotEmpty);
-
-                        if (routesNotNull && routesNotEmpty) {
-                            List<LatLng> routeCoords = new ArrayList<>();
-                            DirectionsResponse.Route route = response.body().routes.get(0);
-
-                            for (DirectionsResponse.Route.Leg leg : route.legs) {
-                                for (DirectionsResponse.Route.Leg.Step step : leg.steps) {
-                                    routeCoords.addAll(step.getLatLngPath());
+                                            // 꺾이는 부분에 마커 추가
+                                            Marker marker = new Marker();
+                                            marker.setPosition(new LatLng(step.startLocation.latitude, step.startLocation.longitude));
+                                            marker.setMap(naverMap);
+                                        }
+                                    }
                                 }
-                            }
 
-                            polyline.setMap(null);
-                            polyline.setCoords(routeCoords);
-                            polyline.setMap(naverMap);
-                            naverMap.moveCamera(CameraUpdate.scrollTo(end));
+                                polyline.setMap(null);
+                                polyline.setCoords(routeCoords);
+                                polyline.setMap(naverMap);
+                                naverMap.moveCamera(CameraUpdate.scrollTo(end));
+                            } else {
+                                // routes가 null이거나 비어있는 경우
+                                Toast.makeText(MapNaverActivity.this, "유효한 경로를 찾을 수 없습니다. 현재 위치부터 목적지까지 직선 경로를 그립니다.", Toast.LENGTH_SHORT).show();
+                                drawDefaultRoute(start, end);
+                            }
                         } else {
-                            Log.e("MapNaverActivity", "경로 응답 실패: " + (response.body() != null ? response.body() : "응답 없음"));
-                            Toast.makeText(MapNaverActivity.this, "경로를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
+                            // 응답이 성공적이지 않거나 바디가 null인 경우
+                            Toast.makeText(MapNaverActivity.this, "서버 응답 실패: " + response.message(), Toast.LENGTH_SHORT).show();
+                            Log.e("MapNaverActivity", "서버 응답 실패: " + response.message());
                         }
                     }
 
@@ -179,39 +202,32 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
                 });
     }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        mapView.onStart();
+    private void drawDefaultRoute(LatLng start, LatLng end) {
+        // 시작점과 끝점 사이의 기본 경로를 그리는 로직
+        List<LatLng> defaultRoute = new ArrayList<>();
+        defaultRoute.add(start);
+        defaultRoute.add(end);
+
+        polyline.setMap(null);
+        polyline.setCoords(defaultRoute);
+        polyline.setMap(naverMap);
+        naverMap.moveCamera(CameraUpdate.scrollTo(end));
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        mapView.onResume();
-    }
+
+
+
 
     @Override
-    protected void onPause() {
-        super.onPause();
-        mapView.onPause();
-    }
-
+    protected void onStart() { super.onStart(); mapView.onStart(); }
     @Override
-    protected void onStop() {
-        super.onStop();
-        mapView.onStop();
-    }
-
+    protected void onResume() { super.onResume(); mapView.onResume(); }
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        mapView.onDestroy();
-    }
-
+    protected void onPause() { super.onPause(); mapView.onPause(); }
     @Override
-    public void onLowMemory() {
-        super.onLowMemory();
-        mapView.onLowMemory();
-    }
+    protected void onStop() { super.onStop(); mapView.onStop(); }
+    @Override
+    protected void onDestroy() { super.onDestroy(); mapView.onDestroy(); }
+    @Override
+    public void onLowMemory() { super.onLowMemory(); mapView.onLowMemory(); }
 }
