@@ -23,7 +23,6 @@ import com.naver.maps.map.NaverMapSdk;
 import java.util.ArrayList;
 import java.util.List;
 
-import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import retrofit2.Call;
@@ -117,7 +116,6 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
         Retrofit retrofit = createRetrofitClient();
         NaverGeocodingService geocodingService = retrofit.create(NaverGeocodingService.class);
 
-        // CLIENT_ID와 CLIENT_SECRET을 제거한 메서드 호출
         geocodingService.getCoordinates(destination).enqueue(new Callback<GeocodingResponse>() {
             @Override
             public void onResponse(Call<GeocodingResponse> call, Response<GeocodingResponse> response) {
@@ -150,12 +148,9 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
         String startPoint = start.latitude + "," + start.longitude;
         String endPoint = end.latitude + "," + end.longitude;
 
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(BASE_URL)
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
-
+        Retrofit retrofit = createRetrofitClient();
         NaverDirectionsService directionsService = retrofit.create(NaverDirectionsService.class);
+
         directionsService.getDirections(startPoint, endPoint, "normal", CLIENT_ID, CLIENT_SECRET)
                 .enqueue(new Callback<DirectionsResponse>() {
                     @Override
@@ -163,14 +158,12 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
                         if (response.isSuccessful() && response.body() != null) {
                             DirectionsResponse directionsResponse = response.body();
                             if (directionsResponse.routes != null && !directionsResponse.routes.isEmpty()) {
-                                // 경로가 정상적으로 반환되었을 경우
                                 List<LatLng> routeCoords = new ArrayList<>();
                                 for (DirectionsResponse.Route route : directionsResponse.routes) {
                                     for (DirectionsResponse.Route.Leg leg : route.legs) {
                                         for (DirectionsResponse.Route.Leg.Step step : leg.steps) {
                                             routeCoords.addAll(step.getLatLngPath());
 
-                                            // 꺾이는 부분에 마커 추가
                                             Marker marker = new Marker();
                                             marker.setPosition(new LatLng(step.startLocation.latitude, step.startLocation.longitude));
                                             marker.setMap(naverMap);
@@ -183,12 +176,10 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
                                 polyline.setMap(naverMap);
                                 naverMap.moveCamera(CameraUpdate.scrollTo(end));
                             } else {
-                                // routes가 null이거나 비어있는 경우
                                 Toast.makeText(MapNaverActivity.this, "유효한 경로를 찾을 수 없습니다. 현재 위치부터 목적지까지 직선 경로를 그립니다.", Toast.LENGTH_SHORT).show();
                                 drawDefaultRoute(start, end);
                             }
                         } else {
-                            // 응답이 성공적이지 않거나 바디가 null인 경우
                             Toast.makeText(MapNaverActivity.this, "서버 응답 실패: " + response.message(), Toast.LENGTH_SHORT).show();
                             Log.e("MapNaverActivity", "서버 응답 실패: " + response.message());
                         }
@@ -203,7 +194,6 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
     }
 
     private void drawDefaultRoute(LatLng start, LatLng end) {
-        // 시작점과 끝점 사이의 기본 경로를 그리는 로직
         List<LatLng> defaultRoute = new ArrayList<>();
         defaultRoute.add(start);
         defaultRoute.add(end);
@@ -213,10 +203,6 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
         polyline.setMap(naverMap);
         naverMap.moveCamera(CameraUpdate.scrollTo(end));
     }
-
-
-
-
 
     @Override
     protected void onStart() { super.onStart(); mapView.onStart(); }
