@@ -32,7 +32,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private static final String CLIENT_ID = "qeg3laengo";
-    private static final String BASE_URL = "https://maps.googleapis.com/maps/api/directions/";
+    private static final String BASE_URL = "https://maps.googleapis.com/maps/api/"; // 수정된 BASE_URL
     private static final String GOOGLE_API_KEY = "AIzaSyBtWaGATq4iQEsKT710EkGPkuNiRf84YHU";
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1000;
 
@@ -133,13 +133,14 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
         Log.d("MapNaverActivity", "출발지: " + startPoint + ", 도착지: " + endPoint); // 로그 추가
 
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(BASE_URL)
+                .baseUrl(BASE_URL) // BASE_URL은 그대로 유지
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
 
         GoogleDirectionsService directionsService = retrofit.create(GoogleDirectionsService.class);
-        // 차량 경로 요청
-        directionsService.getDirections(startPoint, endPoint, "driving", GOOGLE_API_KEY)
+
+        // 차량 경로 요청 (mode는 driving으로 설정)
+        directionsService.getDirections(startPoint, endPoint, "driving", GOOGLE_API_KEY) // API 호출 시 경로 추가
                 .enqueue(new Callback<GoogleDirectionsResponse>() {
                     @Override
                     public void onResponse(Call<GoogleDirectionsResponse> call, Response<GoogleDirectionsResponse> response) {
@@ -176,6 +177,12 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
                         } else {
                             // 응답이 성공적이지 않은 경우
                             Log.e("MapNaverActivity", "경로 요청 실패: " + response.errorBody());
+                            try {
+                                String errorResponse = response.errorBody().string();
+                                Log.e("MapNaverActivity", "응답 내용: " + errorResponse);
+                            } catch (Exception e) {
+                                Log.e("MapNaverActivity", "오류 발생: " + e.getMessage());
+                            }
                             Toast.makeText(MapNaverActivity.this, "경로를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
                         }
                     }
@@ -187,6 +194,8 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
                     }
                 });
     }
+
+
 
     @Override
     protected void onStart() {
@@ -219,8 +228,8 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
     }
 
     @Override
-    public void onLowMemory() {
-        super.onLowMemory();
-        mapView.onLowMemory();
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        locationSource.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 }
