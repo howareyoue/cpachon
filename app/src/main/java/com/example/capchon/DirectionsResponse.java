@@ -1,9 +1,10 @@
 package com.example.capchon;
 
-import com.naver.maps.geometry.LatLng; // 네이버 지도 LatLng
 import java.util.ArrayList;
 import java.util.List;
+import com.naver.maps.geometry.LatLng;
 
+// DirectionsResponse 클래스
 public class DirectionsResponse {
     public List<Route> routes;
 
@@ -14,19 +15,22 @@ public class DirectionsResponse {
             public List<Step> steps;
 
             public static class Step {
-                public List<List<Double>> path;  // 각 경로 점 (위도, 경도)
+                public Location startLocation;
+                public List<Location> path;
 
-                // path 리스트를 LatLng로 변환할 수 있도록 메서드 추가
                 public List<LatLng> getLatLngPath() {
                     List<LatLng> latLngPath = new ArrayList<>();
-                    for (List<Double> point : path) {
-                        if (point.size() >= 2) {
-                            latLngPath.add(new LatLng(point.get(1), point.get(0)));  // 위도, 경도 순서
-                        }
+                    for (Location location : path) {
+                        latLngPath.add(new LatLng(location.latitude, location.longitude));
                     }
                     return latLngPath;
                 }
             }
         }
+    }
+
+    public static class Location {
+        public double latitude;
+        public double longitude;
     }
 }
