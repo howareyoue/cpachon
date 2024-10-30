@@ -88,6 +88,9 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
             userLocationMarker.setPosition(userLocation);
             userLocationMarker.setMap(naverMap);
         });
+
+        // 카메라를 사용자 위치로 이동
+        naverMap.moveCamera(CameraUpdate.scrollTo(new LatLng(0, 0))); // 초기 카메라 위치 설정
     }
 
     private void getCoordinatesAndSetMarkers(String start, String end) {
