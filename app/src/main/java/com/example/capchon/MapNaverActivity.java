@@ -5,7 +5,6 @@ import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
-import android.os.Handler;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -177,6 +176,20 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
                                                         (startLatLng.longitude + endLatLng.longitude) / 2
                                                 );
                                                 naverMap.moveCamera(CameraUpdate.scrollTo(midPoint));
+
+                                                // 거리 계산 및 표시
+                                                Location startLocation = new Location("startLocation");
+                                                startLocation.setLatitude(startLatLng.latitude);
+                                                startLocation.setLongitude(startLatLng.longitude);
+
+                                                Location destinationLocation = new Location("destinationLocation");
+                                                destinationLocation.setLatitude(endLatLng.latitude);
+                                                destinationLocation.setLongitude(endLatLng.longitude);
+
+                                                float distance = startLocation.distanceTo(destinationLocation); // 거리 계산
+                                                String distanceText = String.format("출발지와 목적지 간의 거리: %.2f m", distance);
+                                                Toast.makeText(MapNaverActivity.this, distanceText, Toast.LENGTH_SHORT).show();
+
                                             } else {
                                                 Toast.makeText(MapNaverActivity.this, "목적지 좌표 요청 실패", Toast.LENGTH_SHORT).show();
                                             }
@@ -214,12 +227,9 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
                     if (location != null) {
                         updateCurrentLocationMarker(location); // 현재 위치 마커 설정
                     } else {
-                        Toast.makeText(MapNaverActivity.this, "현재 위치를 가져올 수 없습니다.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "현재 위치를 가져올 수 없습니다.", Toast.LENGTH_SHORT).show();
                     }
                 });
-
-        // 위치 업데이트 시작
-        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null);
     }
 
     @Override
@@ -227,7 +237,6 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // 권한이 허용되면 현재 위치를 보여줍니다.
                 showCurrentLocation();
             } else {
                 Toast.makeText(this, "위치 권한이 필요합니다.", Toast.LENGTH_SHORT).show();
@@ -236,9 +245,38 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        mapsView.onStart();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mapsView.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mapsView.onPause();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        mapsView.onStop();
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
-        // 위치 업데이트 중지
-        fusedLocationClient.removeLocationUpdates(locationCallback);
+        mapsView.onDestroy();
+    }
+
+    @Override
+    public void onLowMemory() {
+        super.onLowMemory();
+        mapsView.onLowMemory();
     }
 }
