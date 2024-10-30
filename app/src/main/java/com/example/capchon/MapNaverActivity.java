@@ -1,59 +1,64 @@
 package com.example.capchon;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.naver.maps.geometry.LatLng;
+import com.naver.maps.map.CameraUpdate;
 import com.naver.maps.map.MapView;
+import com.naver.maps.map.NaverMap;
 import com.naver.maps.map.NaverMapSdk;
 import com.naver.maps.map.OnMapReadyCallback;
-import com.naver.maps.map.NaverMap;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
+import com.naver.maps.map.overlay.Marker;
+import com.naver.maps.map.util.FusedLocationSource;
 
 public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCallback {
 
-    private static final String CLIENT_ID = "qeg3laengo";
-    private static final String BASE_URL = "https://maps.googleapis.com/maps/api/";
-    private static final String GOOGLE_API_KEY = "AIzaSyBtWaGATq4iQEsKT710EkGPkuNiRf84YHU";
+    private static final String CLIENT_ID = "qeg3laengo"; // Naver Cloud Platform 클라이언트 ID
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1000;
 
-    private MapView mapView;
+    private MapView mapsView;
     private NaverMap naverMap;
+    private FusedLocationSource locationSource;
 
-    private EditText etStartLocation, etDestination;
-    private TextView tvDistance, tvDuration;
+    private Marker startMarker;
+    private Marker destinationMarker;
+    private Marker userLocationMarker;
 
+    private EditText etStartLocation;
+    private EditText etDestination;
+
+    @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps_naver);
 
-        etStartLocation = findViewById(R.id.et_start_location);
-        etDestination = findViewById(R.id.et_destination);
-        tvDistance = findViewById(R.id.tv_distance);
-        tvDuration = findViewById(R.id.tv_duration);
-
+        // 네이버 지도 SDK 클라이언트 설정
         NaverMapSdk.getInstance(this).setClient(new NaverMapSdk.NaverCloudPlatformClient(CLIENT_ID));
-        mapView = findViewById(R.id.map_view);
-        Button btnMeasureDistance = findViewById(R.id.btn_measure_distance);
 
-        mapView.getMapAsync(this);
+        mapsView = findViewById(R.id.maps_view);
+        etStartLocation = findViewById(R.id.start_location);  // 수정된 부분
+        etDestination = findViewById(R.id.destination);
+        Button btnSetMarkers = findViewById(R.id.btn_markers);
 
-        btnMeasureDistance.setOnClickListener(v -> {
-            String startAddress = etStartLocation.getText().toString();
-            String endAddress = etDestination.getText().toString();
-            if (!startAddress.isEmpty() && !endAddress.isEmpty()) {
-                fetchCoordinatesAndCalculateDistance(startAddress, endAddress);
+        // 지도 비동기 초기화
+        mapsView.getMapAsync(this);
+
+        // 버튼 클릭 시 마커 설정
+        btnSetMarkers.setOnClickListener(v -> {
+            String startLocation = etStartLocation.getText().toString();
+            String destinationLocation = etDestination.getText().toString();
+
+            if (!startLocation.isEmpty() && !destinationLocation.isEmpty()) {
+                setMarkers(startLocation, destinationLocation);
             } else {
                 Toast.makeText(this, "출발지와 목적지를 입력하세요.", Toast.LENGTH_SHORT).show();
             }
@@ -63,82 +68,72 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
     @Override
     public void onMapReady(@NonNull NaverMap naverMap) {
         this.naverMap = naverMap;
+
+        // 사용자 위치 업데이트를 위한 FusedLocationSource 설정
+        locationSource = new FusedLocationSource(this, LOCATION_PERMISSION_REQUEST_CODE);
+        naverMap.setLocationSource(locationSource);
+
+        // 실시간 사용자 위치 마커
+        userLocationMarker = new Marker();
+        naverMap.addOnLocationChangeListener(location -> {
+            LatLng userLocation = new LatLng(location.getLatitude(), location.getLongitude());
+            userLocationMarker.setPosition(userLocation);
+            userLocationMarker.setMap(naverMap);
+        });
     }
 
-    private void fetchCoordinatesAndCalculateDistance(String startAddress, String endAddress) {
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("https://naveropenapi.apigw.ntruss.com/")
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
+    private void setMarkers(String start, String end) {
+        // start 및 end 문자열을 경도/위도 좌표로 변환하는 코드 추가 필요 (지오코딩 API 활용 가능)
 
-        NaverGeocodingService geocodingService = retrofit.create(NaverGeocodingService.class);
+        // 예시 좌표 설정 - 실제 지오코딩 API로 변환 필요
+        LatLng startLatLng = new LatLng(35.237196, 126.411049); // 샘플 출발지 좌표
+        LatLng endLatLng = new LatLng(35.235671, 126.409723); // 샘플 목적지 좌표
 
-        geocodingService.getCoordinates(startAddress, CLIENT_ID, "Lgx060Lao80eixwSkcQLMBp8R8TuA8q0gok01dgG")
-                .enqueue(new Callback<GeocodingResponse>() {
-                    @Override
-                    public void onResponse(Call<GeocodingResponse> call, Response<GeocodingResponse> response) {
-                        if (response.isSuccessful() && response.body() != null && !response.body().addresses.isEmpty()) {
-                            GeocodingResponse.Address startAddr = response.body().addresses.get(0);
-                            LatLng startLatLng = new LatLng(Double.parseDouble(startAddr.y), Double.parseDouble(startAddr.x));
+        // 출발지 마커 설정
+        if (startMarker == null) {
+            startMarker = new Marker();
+        }
+        startMarker.setPosition(startLatLng);
+        startMarker.setMap(naverMap);
 
-                            geocodingService.getCoordinates(endAddress, CLIENT_ID, "Lgx060Lao80eixwSkcQLMBp8R8TuA8q0gok01dgG")
-                                    .enqueue(new Callback<GeocodingResponse>() {
-                                        @Override
-                                        public void onResponse(Call<GeocodingResponse> call, Response<GeocodingResponse> response) {
-                                            if (response.isSuccessful() && response.body() != null && !response.body().addresses.isEmpty()) {
-                                                GeocodingResponse.Address endAddr = response.body().addresses.get(0);
-                                                LatLng endLatLng = new LatLng(Double.parseDouble(endAddr.y), Double.parseDouble(endAddr.x));
-                                                calculateDistanceAndDuration(startLatLng, endLatLng);
-                                            }
-                                        }
+        // 목적지 마커 설정
+        if (destinationMarker == null) {
+            destinationMarker = new Marker();
+        }
+        destinationMarker.setPosition(endLatLng);
+        destinationMarker.setMap(naverMap);
 
-                                        @Override
-                                        public void onFailure(Call<GeocodingResponse> call, Throwable t) {
-                                            Toast.makeText(MapNaverActivity.this, "목적지 좌표 요청 실패", Toast.LENGTH_SHORT).show();
-                                        }
-                                    });
-                        } else {
-                            Toast.makeText(MapNaverActivity.this, "출발지 좌표 요청 실패", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(Call<GeocodingResponse> call, Throwable t) {
-                        Toast.makeText(MapNaverActivity.this, "출발지 좌표 요청 실패", Toast.LENGTH_SHORT).show();
-                    }
-                });
+        // 카메라를 출발지로 이동
+        naverMap.moveCamera(CameraUpdate.scrollTo(startLatLng));
     }
 
-    private void calculateDistanceAndDuration(LatLng start, LatLng end) {
-        String startPoint = start.latitude + "," + start.longitude;
-        String endPoint = end.latitude + "," + end.longitude;
+    @Override
+    protected void onStart() {
+        super.onStart();
+        mapsView.onStart();
+    }
 
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(BASE_URL)
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mapsView.onResume();
+    }
 
-        GoogleDirectionsService directionsService = retrofit.create(GoogleDirectionsService.class);
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mapsView.onPause();
+    }
 
-        directionsService.getDirections(startPoint, endPoint, "driving", GOOGLE_API_KEY)
-                .enqueue(new Callback<GoogleDirectionsResponse>() {
-                    @Override
-                    public void onResponse(Call<GoogleDirectionsResponse> call, Response<GoogleDirectionsResponse> response) {
-                        if (response.isSuccessful() && response.body() != null) {
-                            GoogleDirectionsResponse.Route route = response.body().routes.get(0);
-                            GoogleDirectionsResponse.Leg leg = route.legs.get(0);
+    @Override
+    protected void onStop() {
+        super.onStop();
+        mapsView.onStop();
+    }
 
-                            tvDistance.setText("거리: " + leg.distance.text);
-                            tvDuration.setText("이동 시간: " + leg.duration.text);
-                        } else {
-                            Toast.makeText(MapNaverActivity.this, "거리 계산 요청 실패", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(Call<GoogleDirectionsResponse> call, Throwable t) {
-                        Toast.makeText(MapNaverActivity.this, "거리 계산 요청 실패", Toast.LENGTH_SHORT).show();
-                    }
-                });
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mapsView.onDestroy();
     }
 }
