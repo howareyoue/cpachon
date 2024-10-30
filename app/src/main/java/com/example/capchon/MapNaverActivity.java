@@ -32,7 +32,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private static final String CLIENT_ID = "qeg3laengo";
-    private static final String BASE_URL = "https://maps.googleapis.com/maps/api/directions/";
+    private static final String BASE_URL = "https://maps.googleapis.com/maps/api/";
     private static final String GOOGLE_API_KEY = "AIzaSyBtWaGATq4iQEsKT710EkGPkuNiRf84YHU";
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1000;
 
@@ -41,7 +41,7 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
     private FusedLocationSource locationSource;
     private LatLng currentLatLng;
     private PolylineOverlay polyline;
-    private EditText etDestination;
+    private EditText etStartLocation, etDestination;
     private Button btnRecommendRoute;
     private Marker destinationMarker;
 
@@ -53,6 +53,7 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
         NaverMapSdk.getInstance(this).setClient(new NaverMapSdk.NaverCloudPlatformClient(CLIENT_ID));
 
         mapView = findViewById(R.id.map_view);
+        etStartLocation = findViewById(R.id.et_start_location);
         etDestination = findViewById(R.id.et_destination);
         btnRecommendRoute = findViewById(R.id.btn_recommend_route);
         polyline = new PolylineOverlay();
@@ -62,7 +63,9 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
 
         btnRecommendRoute.setOnClickListener(v -> {
             if (naverMap != null && currentLatLng != null) {
-                getCoordinatesFromNaver(etDestination.getText().toString());
+                LatLng startLatLng = currentLatLng; // 현재 위치를 출발지로 설정
+                String destination = etDestination.getText().toString();
+                getCoordinatesFromNaver(startLatLng, destination);
             }
         });
     }
@@ -78,20 +81,18 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
         });
     }
 
-    // 목적지 좌표 검색 메서드
-    private void getCoordinatesFromNaver(String destination) {
+    private void getCoordinatesFromNaver(LatLng start, String destination) {
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("https://naveropenapi.apigw.ntruss.com/")  // Naver Geocoding API 주소
+                .baseUrl("https://naveropenapi.apigw.ntruss.com/")
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
 
         NaverGeocodingService geocodingService = retrofit.create(NaverGeocodingService.class);
 
-        // Naver Geocoding API 호출 시 필요한 헤더를 추가합니다.
         Call<GeocodingResponse> call = geocodingService.getCoordinates(
                 destination,
-                CLIENT_ID, // 클라이언트 ID 입력
-                "Lgx060Lao80eixwSkcQLMBp8R8TuA8q0gok01dgG" // 시크릿 키 입력
+                CLIENT_ID,
+                "Lgx060Lao80eixwSkcQLMBp8R8TuA8q0gok01dgG"
         );
 
         call.enqueue(new Callback<GeocodingResponse>() {
@@ -99,12 +100,12 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
             public void onResponse(Call<GeocodingResponse> call, Response<GeocodingResponse> response) {
                 if (response.isSuccessful() && response.body() != null && !response.body().addresses.isEmpty()) {
                     LatLng destinationLatLng = new LatLng(
-                            Double.parseDouble(response.body().addresses.get(0).y), // y값을 문자열로 변환 후 파싱
-                            Double.parseDouble(response.body().addresses.get(0).x)  // x값을 문자열로 변환 후 파싱
+                            Double.parseDouble(response.body().addresses.get(0).y),
+                            Double.parseDouble(response.body().addresses.get(0).x)
                     );
                     Log.d("MapNaverActivity", "목적지 좌표: " + destinationLatLng.latitude + ", " + destinationLatLng.longitude);
                     setDestinationMarker(destinationLatLng);
-                    requestGoogleDirections(currentLatLng, destinationLatLng);
+                    requestGoogleDirections(start, destinationLatLng);
                 } else {
                     Log.e("MapNaverActivity", "서버 응답 실패: " + response.errorBody());
                     Toast.makeText(MapNaverActivity.this, "목적지의 좌표를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
@@ -130,7 +131,7 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
         String startPoint = start.latitude + "," + start.longitude;
         String endPoint = end.latitude + "," + end.longitude;
 
-        Log.d("MapNaverActivity", "출발지: " + startPoint + ", 도착지: " + endPoint); // 로그 추가
+        Log.d("MapNaverActivity", "출발지: " + startPoint + ", 도착지: " + endPoint);
 
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(BASE_URL)
@@ -138,21 +139,18 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
                 .build();
 
         GoogleDirectionsService directionsService = retrofit.create(GoogleDirectionsService.class);
-        // 차량 경로 요청
+
         directionsService.getDirections(startPoint, endPoint, "driving", GOOGLE_API_KEY)
                 .enqueue(new Callback<GoogleDirectionsResponse>() {
                     @Override
                     public void onResponse(Call<GoogleDirectionsResponse> call, Response<GoogleDirectionsResponse> response) {
                         if (response.isSuccessful() && response.body() != null) {
-                            GoogleDirectionsResponse directionsResponse = response.body();
-                            Log.d("GoogleDirections", "응답: " + directionsResponse.toString()); // 응답 로그 출력
-                            Log.d("GoogleDirections", "상태: " + directionsResponse.status); // 상태 로그 추가
+                            String responseStatus = response.body().status;
 
-                            // 경로가 존재하는지 확인
-                            if (directionsResponse.routes != null && !directionsResponse.routes.isEmpty()) {
-                                // 경로가 있는 경우
+                            Log.d("MapNaverActivity", "응답 상태: " + responseStatus);
+                            if ("OK".equals(responseStatus)) {
                                 List<LatLng> routeCoords = new ArrayList<>();
-                                for (GoogleDirectionsResponse.Route route : directionsResponse.routes) {
+                                for (GoogleDirectionsResponse.Route route : response.body().routes) {
                                     for (GoogleDirectionsResponse.Leg leg : route.legs) {
                                         for (GoogleDirectionsResponse.Step step : leg.steps) {
                                             routeCoords.add(new LatLng(step.start_location.lat, step.start_location.lng));
@@ -168,15 +166,15 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
                                 } else {
                                     Toast.makeText(MapNaverActivity.this, "경로 좌표가 충분하지 않습니다.", Toast.LENGTH_SHORT).show();
                                 }
+                            } else if ("ZERO_RESULTS".equals(responseStatus)) {
+                                Toast.makeText(MapNaverActivity.this, "해당 거리에서는 경로가 없습니다.", Toast.LENGTH_SHORT).show();
                             } else {
-                                // 경로가 없는 경우
-                                Toast.makeText(MapNaverActivity.this, "응답에 경로가 없습니다.", Toast.LENGTH_SHORT).show();
-                                Log.e("MapNaverActivity", "응답에 경로가 없습니다.");
+                                Log.e("MapNaverActivity", "경로 요청 실패: " + responseStatus);
+                                Toast.makeText(MapNaverActivity.this, "경로 요청 실패: " + responseStatus, Toast.LENGTH_SHORT).show();
                             }
                         } else {
-                            // 응답이 성공적이지 않은 경우
-                            Log.e("MapNaverActivity", "경로 요청 실패: " + response.errorBody());
-                            Toast.makeText(MapNaverActivity.this, "경로를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
+                            Log.e("MapNaverActivity", "경로 요청 실패: 상태 코드 - " + response.code());
+                            Toast.makeText(MapNaverActivity.this, "경로 요청 실패", Toast.LENGTH_SHORT).show();
                         }
                     }
 
@@ -219,8 +217,8 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
     }
 
     @Override
-    public void onLowMemory() {
-        super.onLowMemory();
-        mapView.onLowMemory();
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        locationSource.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 }

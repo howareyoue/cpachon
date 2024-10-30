@@ -5,7 +5,7 @@ import retrofit2.http.GET;
 import retrofit2.http.Query;
 
 public interface GoogleDirectionsService {
-    @GET("maps/api/directions/json")
+    @GET("directions/json") // 경로에서 'maps/api/'를 제거했습니다.
     Call<GoogleDirectionsResponse> getDirections(
             @Query("origin") String origin,
             @Query("destination") String destination,
@@ -13,4 +13,3 @@ public interface GoogleDirectionsService {
             @Query("key") String apiKey // API 키 추가
     );
 }
-
