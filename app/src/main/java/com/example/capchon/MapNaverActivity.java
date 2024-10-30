@@ -45,9 +45,9 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
         NaverMapSdk.getInstance(this).setClient(new NaverMapSdk.NaverCloudPlatformClient(CLIENT_ID));
 
         mapsView = findViewById(R.id.maps_view);
-        etStartLocation = findViewById(R.id.start_location);  // 수정된 부분
-        etDestination = findViewById(R.id.destination);
-        Button btnSetMarkers = findViewById(R.id.btn_markers);
+        etStartLocation = findViewById(R.id.start_location);  // 출발지 EditText
+        etDestination = findViewById(R.id.destination);  // 목적지 EditText
+        Button btnSetMarkers = findViewById(R.id.btn_markers);  // 마커 설정 버튼
 
         // 지도 비동기 초기화
         mapsView.getMapAsync(this);
@@ -83,28 +83,39 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
     }
 
     private void setMarkers(String start, String end) {
-        // start 및 end 문자열을 경도/위도 좌표로 변환하는 코드 추가 필요 (지오코딩 API 활용 가능)
+        // 기존 마커 제거
+        if (startMarker != null) {
+            startMarker.setMap(null);
+        }
+        if (destinationMarker != null) {
+            destinationMarker.setMap(null);
+        }
 
-        // 예시 좌표 설정 - 실제 지오코딩 API로 변환 필요
-        LatLng startLatLng = new LatLng(35.237196, 126.411049); // 샘플 출발지 좌표
-        LatLng endLatLng = new LatLng(35.235671, 126.409723); // 샘플 목적지 좌표
+        // 사용자가 입력한 출발지와 목적지에 대한 경도/위도 좌표 변환 코드 필요
+        // 예시: 지오코딩 API를 활용하여 입력된 주소를 좌표로 변환
+
+        // 좌표 변환이 완료된 후 마커를 설정합니다.
+        LatLng startLatLng = getLatLngFromLocation(start); // 사용자가 입력한 출발지의 좌표
+        LatLng endLatLng = getLatLngFromLocation(end); // 사용자가 입력한 목적지의 좌표
 
         // 출발지 마커 설정
-        if (startMarker == null) {
-            startMarker = new Marker();
-        }
+        startMarker = new Marker();
         startMarker.setPosition(startLatLng);
         startMarker.setMap(naverMap);
 
         // 목적지 마커 설정
-        if (destinationMarker == null) {
-            destinationMarker = new Marker();
-        }
+        destinationMarker = new Marker();
         destinationMarker.setPosition(endLatLng);
         destinationMarker.setMap(naverMap);
 
         // 카메라를 출발지로 이동
         naverMap.moveCamera(CameraUpdate.scrollTo(startLatLng));
+    }
+
+    private LatLng getLatLngFromLocation(String location) {
+        // 여기에 지오코딩 API를 통해 주소를 위도/경도로 변환하는 로직을 추가해야 합니다.
+        // 현재는 예시로 기본 좌표를 반환합니다.
+        return new LatLng(0, 0); // 실제 구현 필요
     }
 
     @Override
