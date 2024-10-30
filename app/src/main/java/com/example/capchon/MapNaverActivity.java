@@ -5,6 +5,7 @@ import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
+import android.os.Handler;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -14,6 +15,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.naver.maps.geometry.LatLng;
 import com.naver.maps.map.CameraUpdate;
@@ -47,6 +50,8 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
     private EditText etDestination;
 
     private FusedLocationProviderClient fusedLocationClient;
+    private LocationRequest locationRequest;
+    private LocationCallback locationCallback;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -68,6 +73,9 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
         // FusedLocationProviderClient 초기화
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
+        // 현재 위치 업데이트 설정
+        setupLocationUpdates();
+
         // 버튼 클릭 시 마커 설정
         btnSetMarkers.setOnClickListener(v -> {
             String startLocation = etStartLocation.getText().toString();
@@ -79,14 +87,47 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
                 Toast.makeText(this, "출발지와 목적지를 입력하세요.", Toast.LENGTH_SHORT).show();
             }
         });
-
-        // 현재 위치 표시 호출
-        showCurrentLocation();
     }
 
     @Override
     public void onMapReady(@NonNull NaverMap naverMap) {
         this.naverMap = naverMap;
+        showCurrentLocation(); // 지도 준비가 완료된 후 현재 위치 표시 호출
+    }
+
+    private void setupLocationUpdates() {
+        // 위치 요청 설정
+        locationRequest = LocationRequest.create();
+        locationRequest.setInterval(5000); // 5초 간격으로 위치 업데이트
+        locationRequest.setFastestInterval(2000);
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+
+        // 위치 콜백 설정
+        locationCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult(@NonNull com.google.android.gms.location.LocationResult locationResult) {
+                if (locationResult != null && locationResult.getLocations().size() > 0) {
+                    for (Location location : locationResult.getLocations()) {
+                        updateCurrentLocationMarker(location);
+                    }
+                }
+            }
+        };
+    }
+
+    private void updateCurrentLocationMarker(Location location) {
+        LatLng currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+
+        // 현재 위치 마커 설정
+        if (currentLocationMarker == null) {
+            currentLocationMarker = new Marker();
+            currentLocationMarker.setIcon(OverlayImage.fromResource(R.drawable.ic_current_location));
+        }
+        currentLocationMarker.setPosition(currentLatLng);
+        currentLocationMarker.setMap(naverMap);
+
+        // 카메라를 현재 위치로 이동
+        naverMap.moveCamera(CameraUpdate.scrollTo(currentLatLng));
     }
 
     private void setMarkersByAddress(String startAddress, String endAddress) {
@@ -171,24 +212,14 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
         fusedLocationClient.getLastLocation()
                 .addOnSuccessListener(this, location -> {
                     if (location != null) {
-                        LatLng currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-
-                        // 현재 위치 마커 설정
-                        if (currentLocationMarker == null) {
-                            currentLocationMarker = new Marker();
-                        }
-                        currentLocationMarker.setPosition(currentLatLng);
-                        currentLocationMarker.setMap(naverMap);
-
-                        // 벡터 드로어블을 사용하여 아이콘 설정
-                        currentLocationMarker.setIcon(OverlayImage.fromResource(R.drawable.ic_current_location));
-
-                        // 카메라를 현재 위치로 이동
-                        naverMap.moveCamera(CameraUpdate.scrollTo(currentLatLng));
+                        updateCurrentLocationMarker(location); // 현재 위치 마커 설정
                     } else {
                         Toast.makeText(MapNaverActivity.this, "현재 위치를 가져올 수 없습니다.", Toast.LENGTH_SHORT).show();
                     }
                 });
+
+        // 위치 업데이트 시작
+        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null);
     }
 
     @Override
@@ -196,7 +227,7 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // 권한이 승인된 경우 현재 위치를 다시 표시
+                // 권한이 허용되면 현재 위치를 보여줍니다.
                 showCurrentLocation();
             } else {
                 Toast.makeText(this, "위치 권한이 필요합니다.", Toast.LENGTH_SHORT).show();
@@ -205,32 +236,9 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
     }
 
     @Override
-    protected void onStart() {
-        super.onStart();
-        mapsView.onStart();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        mapsView.onResume();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        mapsView.onPause();
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        mapsView.onStop();
-    }
-
-    @Override
     protected void onDestroy() {
         super.onDestroy();
-        mapsView.onDestroy();
+        // 위치 업데이트 중지
+        fusedLocationClient.removeLocationUpdates(locationCallback);
     }
 }
