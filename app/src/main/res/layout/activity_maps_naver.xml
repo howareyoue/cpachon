@@ -33,7 +33,7 @@
         android:id="@+id/tv_distance"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/btn_recommend_route"
+        android:layout_below= "@+id/btn_measure_distance"
         android:text="거리: "
         android:layout_marginTop="10dp" />
 

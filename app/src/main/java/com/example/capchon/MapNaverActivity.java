@@ -1,7 +1,6 @@
 package com.example.capchon;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -11,12 +10,10 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.naver.maps.geometry.LatLng;
-import com.naver.maps.map.CameraUpdate;
 import com.naver.maps.map.MapView;
 import com.naver.maps.map.NaverMapSdk;
 import com.naver.maps.map.OnMapReadyCallback;
 import com.naver.maps.map.NaverMap;
-import com.naver.maps.map.overlay.Marker;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -48,11 +45,11 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
 
         NaverMapSdk.getInstance(this).setClient(new NaverMapSdk.NaverCloudPlatformClient(CLIENT_ID));
         mapView = findViewById(R.id.map_view);
-        Button btnRecommendRoute = findViewById(R.id.btn_recommend_route);
+        Button btnMeasureDistance = findViewById(R.id.btn_measure_distance);
 
         mapView.getMapAsync(this);
 
-        btnRecommendRoute.setOnClickListener(v -> {
+        btnMeasureDistance.setOnClickListener(v -> {
             String startAddress = etStartLocation.getText().toString();
             String endAddress = etDestination.getText().toString();
             if (!startAddress.isEmpty() && !endAddress.isEmpty()) {
@@ -69,7 +66,6 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
     }
 
     private void fetchCoordinatesAndCalculateDistance(String startAddress, String endAddress) {
-        // Instantiate Retrofit and call the Naver geocoding API
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl("https://naveropenapi.apigw.ntruss.com/")
                 .addConverterFactory(GsonConverterFactory.create())
@@ -82,17 +78,17 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
                     @Override
                     public void onResponse(Call<GeocodingResponse> call, Response<GeocodingResponse> response) {
                         if (response.isSuccessful() && response.body() != null && !response.body().addresses.isEmpty()) {
-                            GeocodingResponse.Address startAddress = response.body().addresses.get(0);
-                            LatLng startLatLng = new LatLng(Double.parseDouble(startAddress.y), Double.parseDouble(startAddress.x));
+                            GeocodingResponse.Address startAddr = response.body().addresses.get(0);
+                            LatLng startLatLng = new LatLng(Double.parseDouble(startAddr.y), Double.parseDouble(startAddr.x));
 
                             geocodingService.getCoordinates(endAddress, CLIENT_ID, "Lgx060Lao80eixwSkcQLMBp8R8TuA8q0gok01dgG")
                                     .enqueue(new Callback<GeocodingResponse>() {
                                         @Override
                                         public void onResponse(Call<GeocodingResponse> call, Response<GeocodingResponse> response) {
                                             if (response.isSuccessful() && response.body() != null && !response.body().addresses.isEmpty()) {
-                                                GeocodingResponse.Address endAddress = response.body().addresses.get(0);
-                                                LatLng endLatLng = new LatLng(Double.parseDouble(endAddress.y), Double.parseDouble(endAddress.x));
-                                                requestGoogleDirections(startLatLng, endLatLng);
+                                                GeocodingResponse.Address endAddr = response.body().addresses.get(0);
+                                                LatLng endLatLng = new LatLng(Double.parseDouble(endAddr.y), Double.parseDouble(endAddr.x));
+                                                calculateDistanceAndDuration(startLatLng, endLatLng);
                                             }
                                         }
 
@@ -113,7 +109,7 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
                 });
     }
 
-    private void requestGoogleDirections(LatLng start, LatLng end) {
+    private void calculateDistanceAndDuration(LatLng start, LatLng end) {
         String startPoint = start.latitude + "," + start.longitude;
         String endPoint = end.latitude + "," + end.longitude;
 
@@ -135,13 +131,13 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
                             tvDistance.setText("거리: " + leg.distance.text);
                             tvDuration.setText("이동 시간: " + leg.duration.text);
                         } else {
-                            Toast.makeText(MapNaverActivity.this, "경로 요청 실패", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(MapNaverActivity.this, "거리 계산 요청 실패", Toast.LENGTH_SHORT).show();
                         }
                     }
 
                     @Override
                     public void onFailure(Call<GoogleDirectionsResponse> call, Throwable t) {
-                        Toast.makeText(MapNaverActivity.this, "경로 요청 실패", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MapNaverActivity.this, "거리 계산 요청 실패", Toast.LENGTH_SHORT).show();
                     }
                 });
     }

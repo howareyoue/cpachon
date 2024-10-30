@@ -14,8 +14,6 @@ public class GoogleDirectionsResponse {
         public Distance distance; // 거리 정보 추가
         public Duration duration; // 소요 시간 정보 추가
         public List<Step> steps;
-        public Distance distance;
-        public Duration duration;
     }
 
     public static class Distance {
@@ -36,15 +34,5 @@ public class GoogleDirectionsResponse {
     public static class Location {
         public double lat;
         public double lng;
-    }
-
-    public static class Distance {
-        public String text;
-        public int value;
-    }
-
-    public static class Duration {
-        public String text;
-        public int value;
     }
 }
