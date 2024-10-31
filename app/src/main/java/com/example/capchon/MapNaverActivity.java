@@ -113,6 +113,10 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
     }
 
     private void updateCurrentLocationMarker(Location location) {
+        if (naverMap == null) {
+            return; // naverMap이 초기화되지 않았다면 메소드 종료
+        }
+
         LatLng currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
 
         Marker currentMarker = new Marker();
@@ -121,6 +125,7 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
         currentMarker.setMap(naverMap);
         currentLocationMarkers.add(currentMarker);
 
+        // 카메라 위치를 현재 위치로 이동
         naverMap.moveCamera(CameraUpdate.scrollTo(currentLatLng));
     }
 
@@ -183,26 +188,25 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
 
                                                 String distanceText = String.format("거리: %.2f m", distance);
                                                 String timeText = String.format("예상 소요 시간: %d 분 %d 초", travelTimeMin, travelTimeRemainingSec);
-                                                tvDistanceTime.setText(distanceText + "\n" + timeText);
-
+                                                tvDistanceTime.setText(String.format("%s\n%s", distanceText, timeText));
                                             } else {
-                                                Toast.makeText(MapNaverActivity.this, "목적지 좌표 요청 실패", Toast.LENGTH_SHORT).show();
+                                                Toast.makeText(MapNaverActivity.this, "목적지 좌표 가져오기 실패", Toast.LENGTH_SHORT).show();
                                             }
                                         }
 
                                         @Override
                                         public void onFailure(Call<GeocodingResponse> call, Throwable t) {
-                                            Toast.makeText(MapNaverActivity.this, "목적지 좌표 요청 실패", Toast.LENGTH_SHORT).show();
+                                            Toast.makeText(MapNaverActivity.this, "목적지 좌표 가져오기 실패", Toast.LENGTH_SHORT).show();
                                         }
                                     });
                         } else {
-                            Toast.makeText(MapNaverActivity.this, "출발지 좌표 요청 실패", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(MapNaverActivity.this, "출발지 좌표 가져오기 실패", Toast.LENGTH_SHORT).show();
                         }
                     }
 
                     @Override
                     public void onFailure(Call<GeocodingResponse> call, Throwable t) {
-                        Toast.makeText(MapNaverActivity.this, "출발지 좌표 요청 실패", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MapNaverActivity.this, "출발지 좌표 가져오기 실패", Toast.LENGTH_SHORT).show();
                     }
                 });
     }
@@ -214,19 +218,19 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
             return;
         }
 
-        fusedLocationClient.getLastLocation()
-                .addOnSuccessListener(this, location -> {
-                    if (location != null) {
-                        updateCurrentLocationMarker(location);
-                    } else {
-                        Toast.makeText(this, "현재 위치를 가져올 수 없습니다.", Toast.LENGTH_SHORT).show();
-                    }
-                });
+        fusedLocationClient.getLastLocation().addOnSuccessListener(this, location -> {
+            if (location != null) {
+                updateCurrentLocationMarker(location);
+            }
+        });
+
+        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null);
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults); // 부모 클래스의 메소드 호출
+
         if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 showCurrentLocation();
@@ -235,6 +239,7 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
             }
         }
     }
+
 
     @Override
     protected void onResume() {
