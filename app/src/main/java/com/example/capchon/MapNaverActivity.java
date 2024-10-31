@@ -27,6 +27,9 @@ import com.naver.maps.map.OnMapReadyCallback;
 import com.naver.maps.map.overlay.Marker;
 import com.naver.maps.map.overlay.OverlayImage;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -35,8 +38,8 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCallback {
 
-    private static final String CLIENT_ID = "qeg3laengo"; // Naver Cloud Platform 클라이언트 ID
-    private static final String BASE_URL = "https://naveropenapi.apigw.ntruss.com/"; // Naver API 기본 URL
+    private static final String CLIENT_ID = "qeg3laengo";
+    private static final String BASE_URL = "https://naveropenapi.apigw.ntruss.com/";
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1000;
 
     private MapView mapsView;
@@ -44,7 +47,7 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
 
     private Marker startMarker;
     private Marker destinationMarker;
-    private Marker currentLocationMarker;
+    private List<Marker> currentLocationMarkers = new ArrayList<>();
 
     private EditText etStartLocation;
     private EditText etDestination;
@@ -112,12 +115,11 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
     private void updateCurrentLocationMarker(Location location) {
         LatLng currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
 
-        if (currentLocationMarker == null) {
-            currentLocationMarker = new Marker();
-            currentLocationMarker.setIcon(OverlayImage.fromResource(R.drawable.ic_current_location));
-        }
-        currentLocationMarker.setPosition(currentLatLng);
-        currentLocationMarker.setMap(naverMap);
+        Marker currentMarker = new Marker();
+        currentMarker.setPosition(currentLatLng);
+        currentMarker.setIcon(OverlayImage.fromResource(R.drawable.ic_current_location));
+        currentMarker.setMap(naverMap);
+        currentLocationMarkers.add(currentMarker);
 
         naverMap.moveCamera(CameraUpdate.scrollTo(currentLatLng));
     }
@@ -176,7 +178,6 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
                                                 int walkingSpeedMps = 1;
                                                 int travelTimeSec = (int) (distance / walkingSpeedMps);
 
-                                                // 시간을 초에서 분 단위로 변환합니다.
                                                 int travelTimeMin = travelTimeSec / 60;
                                                 int travelTimeRemainingSec = travelTimeSec % 60;
 
@@ -230,39 +231,42 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 showCurrentLocation();
             } else {
-                Toast.makeText(this, "위치 권한이 필요합니다.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "위치 권한이 거부되었습니다.", Toast.LENGTH_SHORT).show();
             }
         }
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        mapsView.onStart();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         mapsView.onResume();
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null);
+        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         mapsView.onPause();
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        mapsView.onStop();
+        fusedLocationClient.removeLocationUpdates(locationCallback);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         mapsView.onDestroy();
+        if (startMarker != null) {
+            startMarker.setMap(null);
+        }
+        if (destinationMarker != null) {
+            destinationMarker.setMap(null);
+        }
+        for (Marker marker : currentLocationMarkers) {
+            marker.setMap(null);
+        }
+        currentLocationMarkers.clear();
     }
 
     @Override
