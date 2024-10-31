@@ -7,6 +7,7 @@ import android.location.Location;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -47,6 +48,7 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
 
     private EditText etStartLocation;
     private EditText etDestination;
+    private TextView tvDistanceTime;
 
     private FusedLocationProviderClient fusedLocationClient;
     private LocationRequest locationRequest;
@@ -58,24 +60,19 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps_naver);
 
-        // 네이버 지도 SDK 클라이언트 설정
         NaverMapSdk.getInstance(this).setClient(new NaverMapSdk.NaverCloudPlatformClient(CLIENT_ID));
 
         mapsView = findViewById(R.id.maps_view);
         etStartLocation = findViewById(R.id.start_location);
         etDestination = findViewById(R.id.destination);
+        tvDistanceTime = findViewById(R.id.tv_distance_time);
         Button btnSetMarkers = findViewById(R.id.btn_markers);
 
-        // 지도 비동기 초기화
         mapsView.getMapAsync(this);
 
-        // FusedLocationProviderClient 초기화
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
-
-        // 현재 위치 업데이트 설정
         setupLocationUpdates();
 
-        // 버튼 클릭 시 마커 설정
         btnSetMarkers.setOnClickListener(v -> {
             String startLocation = etStartLocation.getText().toString();
             String destinationLocation = etDestination.getText().toString();
@@ -91,17 +88,15 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
     @Override
     public void onMapReady(@NonNull NaverMap naverMap) {
         this.naverMap = naverMap;
-        showCurrentLocation(); // 지도 준비가 완료된 후 현재 위치 표시 호출
+        showCurrentLocation();
     }
 
     private void setupLocationUpdates() {
-        // 위치 요청 설정
         locationRequest = LocationRequest.create();
-        locationRequest.setInterval(5000); // 5초 간격으로 위치 업데이트
+        locationRequest.setInterval(5000);
         locationRequest.setFastestInterval(2000);
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
-        // 위치 콜백 설정
         locationCallback = new LocationCallback() {
             @Override
             public void onLocationResult(@NonNull com.google.android.gms.location.LocationResult locationResult) {
@@ -117,7 +112,6 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
     private void updateCurrentLocationMarker(Location location) {
         LatLng currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
 
-        // 현재 위치 마커 설정
         if (currentLocationMarker == null) {
             currentLocationMarker = new Marker();
             currentLocationMarker.setIcon(OverlayImage.fromResource(R.drawable.ic_current_location));
@@ -125,12 +119,10 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
         currentLocationMarker.setPosition(currentLatLng);
         currentLocationMarker.setMap(naverMap);
 
-        // 카메라를 현재 위치로 이동
         naverMap.moveCamera(CameraUpdate.scrollTo(currentLatLng));
     }
 
     private void setMarkersByAddress(String startAddress, String endAddress) {
-        // Retrofit 설정
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(BASE_URL)
                 .addConverterFactory(GsonConverterFactory.create())
@@ -138,7 +130,6 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
 
         NaverGeocodingService geocodingService = retrofit.create(NaverGeocodingService.class);
 
-        // 출발지 좌표 요청
         geocodingService.getCoordinates(startAddress, CLIENT_ID, "Lgx060Lao80eixwSkcQLMBp8R8TuA8q0gok01dgG")
                 .enqueue(new Callback<GeocodingResponse>() {
                     @Override
@@ -147,14 +138,12 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
                             GeocodingResponse.Address startLocation = response.body().addresses.get(0);
                             LatLng startLatLng = new LatLng(Double.parseDouble(startLocation.y), Double.parseDouble(startLocation.x));
 
-                            // 출발지 마커 설정
                             if (startMarker == null) {
                                 startMarker = new Marker();
                             }
                             startMarker.setPosition(startLatLng);
                             startMarker.setMap(naverMap);
 
-                            // 목적지 좌표 요청
                             geocodingService.getCoordinates(endAddress, CLIENT_ID, "Lgx060Lao80eixwSkcQLMBp8R8TuA8q0gok01dgG")
                                     .enqueue(new Callback<GeocodingResponse>() {
                                         @Override
@@ -163,32 +152,37 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
                                                 GeocodingResponse.Address endLocation = response.body().addresses.get(0);
                                                 LatLng endLatLng = new LatLng(Double.parseDouble(endLocation.y), Double.parseDouble(endLocation.x));
 
-                                                // 목적지 마커 설정
                                                 if (destinationMarker == null) {
                                                     destinationMarker = new Marker();
                                                 }
                                                 destinationMarker.setPosition(endLatLng);
                                                 destinationMarker.setMap(naverMap);
 
-                                                // 카메라를 출발지와 목적지 중심으로 이동
                                                 LatLng midPoint = new LatLng(
                                                         (startLatLng.latitude + endLatLng.latitude) / 2,
                                                         (startLatLng.longitude + endLatLng.longitude) / 2
                                                 );
                                                 naverMap.moveCamera(CameraUpdate.scrollTo(midPoint));
 
-                                                // 거리 계산 및 표시
-                                                Location startLocation = new Location("startLocation");
-                                                startLocation.setLatitude(startLatLng.latitude);
-                                                startLocation.setLongitude(startLatLng.longitude);
+                                                Location startLoc = new Location("startLoc");
+                                                startLoc.setLatitude(startLatLng.latitude);
+                                                startLoc.setLongitude(startLatLng.longitude);
 
-                                                Location destinationLocation = new Location("destinationLocation");
-                                                destinationLocation.setLatitude(endLatLng.latitude);
-                                                destinationLocation.setLongitude(endLatLng.longitude);
+                                                Location destLoc = new Location("destLoc");
+                                                destLoc.setLatitude(endLatLng.latitude);
+                                                destLoc.setLongitude(endLatLng.longitude);
 
-                                                float distance = startLocation.distanceTo(destinationLocation); // 거리 계산
-                                                String distanceText = String.format("출발지와 목적지 간의 거리: %.2f m", distance);
-                                                Toast.makeText(MapNaverActivity.this, distanceText, Toast.LENGTH_SHORT).show();
+                                                float distance = startLoc.distanceTo(destLoc);
+                                                int walkingSpeedMps = 1;
+                                                int travelTimeSec = (int) (distance / walkingSpeedMps);
+
+                                                // 시간을 초에서 분 단위로 변환합니다.
+                                                int travelTimeMin = travelTimeSec / 60;
+                                                int travelTimeRemainingSec = travelTimeSec % 60;
+
+                                                String distanceText = String.format("거리: %.2f m", distance);
+                                                String timeText = String.format("예상 소요 시간: %d 분 %d 초", travelTimeMin, travelTimeRemainingSec);
+                                                tvDistanceTime.setText(distanceText + "\n" + timeText);
 
                                             } else {
                                                 Toast.makeText(MapNaverActivity.this, "목적지 좌표 요청 실패", Toast.LENGTH_SHORT).show();
@@ -213,19 +207,16 @@ public class MapNaverActivity extends AppCompatActivity implements OnMapReadyCal
     }
 
     private void showCurrentLocation() {
-        // 위치 권한 체크
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
                 ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // 권한이 없을 경우 권한 요청
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
             return;
         }
 
-        // 현재 위치 가져오기
         fusedLocationClient.getLastLocation()
                 .addOnSuccessListener(this, location -> {
                     if (location != null) {
-                        updateCurrentLocationMarker(location); // 현재 위치 마커 설정
+                        updateCurrentLocationMarker(location);
                     } else {
                         Toast.makeText(this, "현재 위치를 가져올 수 없습니다.", Toast.LENGTH_SHORT).show();
                     }

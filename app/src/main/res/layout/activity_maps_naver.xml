@@ -15,6 +15,15 @@
         android:layout_height="wrap_content"
         android:hint="출발지" />
 
+    <TextView
+        android:id="@+id/tv_distance_time"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="거리와 예상 시간이 여기에 표시됩니다."
+        android:textSize="16sp"
+        android:padding="16dp"
+        android:layout_below="@id/btn_markers"/>
+
     <EditText
         android:id="@+id/destination"
         android:layout_width="match_parent"
