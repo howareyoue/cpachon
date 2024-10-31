@@ -5,11 +5,13 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.bumptech.glide.Glide; // Glide 임포트 추가
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
@@ -19,9 +21,9 @@ import com.google.firebase.database.FirebaseDatabase;
 
 public class loginActivity extends AppCompatActivity {
 
-    private FirebaseAuth mFirebaseAuth; //파이어베이스 인증
-    private DatabaseReference mDatabaseRef ; //실시간데이터베이스
-    private EditText mEtmail,mEtPwd;
+    private FirebaseAuth mFirebaseAuth; // 파이어베이스 인증
+    private DatabaseReference mDatabaseRef; // 실시간 데이터베이스
+    private EditText mEtmail, mEtPwd;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,6 +35,13 @@ public class loginActivity extends AppCompatActivity {
         mEtmail = findViewById(R.id.et_email);
         mEtPwd = findViewById(R.id.et_pwd);
 
+        // GIF 이미지를 로드할 ImageView
+        ImageView logo = findViewById(R.id.logo);
+        Glide.with(this)
+                .asGif()
+                .load(R.drawable.doglogin) // 여기에 GIF 파일을 넣습니다.
+                .into(logo);
+
         Button btn_login = findViewById(R.id.btn_login);
         btn_login.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -42,16 +51,14 @@ public class loginActivity extends AppCompatActivity {
 
                 mFirebaseAuth.signInWithEmailAndPassword(strEmail, strPwd).addOnCompleteListener(loginActivity.this, new OnCompleteListener<AuthResult>() {
                     @Override
-                    public void onComplete(Task task) {
-                        if(task.isSuccessful()){
-                            Intent intent = new Intent(loginActivity.this,MainActivity.class);
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        if (task.isSuccessful()) {
+                            Intent intent = new Intent(loginActivity.this, LoadingActivity.class);
                             startActivity(intent);
                             finish();
-                        }
-                        else{
+                        } else {
                             Toast.makeText(loginActivity.this, "로그인에 실패하셨습니다.", Toast.LENGTH_SHORT).show();
                         }
-
                     }
                 });
             }
@@ -61,7 +68,6 @@ public class loginActivity extends AppCompatActivity {
         btn_register.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
                 Intent intent = new Intent(loginActivity.this, RegisterActivity.class);
                 startActivity(intent);
             }

@@ -11,10 +11,9 @@
         android:layout_width="100dp"
         android:layout_height="100dp"
         android:layout_marginTop="50dp"
-        android:src="@drawable/pet_logo"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:scaleType="centerCrop"
+        android:contentDescription="@string/logo_description"
+        tools:ignore="MissingConstraints" /> <!-- 이미지 설명 추가 -->
 
     <Button
         android:id="@+id/btn_q"
