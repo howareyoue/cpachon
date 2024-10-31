@@ -2,7 +2,8 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:background="@android:color/background_light">
 
     <TextView
         android:id="@+id/title"
@@ -11,14 +12,19 @@
         android:layout_marginTop="10dp"
         android:layout_marginBottom="5dp"
         android:text="자유 게시판"
-        android:textSize="34sp" />
+        android:textSize="34sp"
+        android:textColor="#333333"
+        android:textStyle="bold" />
 
     <EditText
         android:id="@+id/edit_title"
         android:hint="제목"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:inputType="text" />
+        android:inputType="text"
+        android:padding="12dp"
+        android:background="@drawable/rounded_edittext"
+        android:layout_marginTop="8dp" />
 
     <EditText
         android:id="@+id/edit_contents"
@@ -28,12 +34,20 @@
         android:inputType="textMultiLine"
         android:minHeight="200dp"
         android:gravity="top"
-        android:scrollbars="vertical" />
+        android:scrollbars="vertical"
+        android:padding="12dp"
+        android:background="@drawable/rounded_edittext"
+        android:layout_marginTop="8dp" />
 
     <Button
         android:id="@+id/post_button"
         android:text="Post"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp" />
+        android:layout_marginTop="16dp"
+        android:backgroundTint="#4CAF50"
+        android:textColor="#FFFFFF"
+        android:padding="10dp"
+        android:textStyle="bold" />
+
 </LinearLayout>

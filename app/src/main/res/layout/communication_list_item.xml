@@ -1,24 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- res/layout/restaurant_list_item.xml -->
-<LinearLayout
+<androidx.cardview.widget.CardView
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:card_view="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical">
+    android:layout_margin="8dp"
+    card_view:cardCornerRadius="12dp"
+    card_view:cardElevation="4dp"
+    card_view:cardBackgroundColor="#FFFFFF">
 
-    <TextView
-        android:id="@+id/TitleTextView"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="49dp"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:text="제목"/>
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginTop="4dp"
+        android:padding="16dp">
 
-    <TextView
-        android:id="@+id/ContentsTextView"
-        android:layout_width="match_parent"
-        android:layout_height="36dp"
-        android:textSize="18sp"
-        android:text="내용"/>
+        <!-- Title TextView -->
+        <TextView
+            android:id="@+id/TitleTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="#333333"
+            android:text="제목" />
 
-</LinearLayout>
+        <!-- Contents TextView -->
+        <TextView
+            android:id="@+id/ContentsTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textSize="16sp"
+            android:textColor="#666666"
+            android:text="내용" />
+
+    </LinearLayout>
+</androidx.cardview.widget.CardView>
