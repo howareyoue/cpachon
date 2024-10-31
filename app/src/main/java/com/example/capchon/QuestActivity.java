@@ -1,6 +1,7 @@
 package com.example.capchon;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Paint;
 import android.os.Bundle;
 import android.util.Log;
@@ -17,13 +18,18 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 public class QuestActivity extends AppCompatActivity {
 
     private static final String TAG = "QuestActivity";
+    private static final String PREFS_NAME = "QuestPrefs";
+    private static final String LAST_UPDATE_DATE = "LastUpdateDate";
 
     private TextView quest1, quest2, quest3;
     private Button btnCam;
@@ -50,7 +56,26 @@ public class QuestActivity extends AppCompatActivity {
         });
 
         dbRef = FirebaseDatabase.getInstance().getReference("quests");
-        loadQuestsFromDatabase();
+        checkAndLoadQuests();
+    }
+
+    private void checkAndLoadQuests() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        String lastUpdateDate = prefs.getString(LAST_UPDATE_DATE, "");
+
+        Calendar calendar = Calendar.getInstance();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        String currentDate = dateFormat.format(calendar.getTime());
+
+        // 현재 시간이 오전 6시 이전인지 확인
+        boolean isBeforeSixAM = calendar.get(Calendar.HOUR_OF_DAY) < 6;
+
+        if (!currentDate.equals(lastUpdateDate) || isBeforeSixAM) {
+            loadQuestsFromDatabase();
+            prefs.edit().putString(LAST_UPDATE_DATE, currentDate).apply(); // 현재 날짜 저장
+        } else {
+            loadQuestsFromSharedPreferences(prefs); // 저장된 퀘스트 로드
+        }
     }
 
     private void loadQuestsFromDatabase() {
@@ -69,6 +94,7 @@ public class QuestActivity extends AppCompatActivity {
                     Toast.makeText(QuestActivity.this, "Not enough quests available", Toast.LENGTH_SHORT).show();
                 } else {
                     selectRandomQuests();
+                    saveQuestsToSharedPreferences();
                 }
             }
 
@@ -100,7 +126,21 @@ public class QuestActivity extends AppCompatActivity {
         }
     }
 
-    // "쓰레기 줍기" 퀘스트일 경우 (0/3)으로 표시
+    private void saveQuestsToSharedPreferences() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putString("quest1", quest1.getText().toString());
+        editor.putString("quest2", quest2.getText().toString());
+        editor.putString("quest3", quest3.getText().toString());
+        editor.apply();
+    }
+
+    private void loadQuestsFromSharedPreferences(SharedPreferences prefs) {
+        quest1.setText(prefs.getString("quest1", ""));
+        quest2.setText(prefs.getString("quest2", ""));
+        quest3.setText(prefs.getString("quest3", ""));
+    }
+
     private String formatQuestText(String questName) {
         if (questName.equals("쓰레기 줍기")) {
             return questName + " (0/3)";
@@ -124,11 +164,9 @@ public class QuestActivity extends AppCompatActivity {
     }
 
     private void markQuestAsCompleted(String recognizedQuest) {
-        // 쓰레기 줍기 퀘스트인 경우 카운트 증가
         if (trashQuestText != null && recognizedQuest.equals("쓰레기 줍기")) {
             updateTrashQuestProgress();
         } else {
-            // 다른 퀘스트는 일반 취소선 처리
             if (quest1.getText().toString().equals(recognizedQuest)) {
                 quest1.setPaintFlags(quest1.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
             } else if (quest2.getText().toString().equals(recognizedQuest)) {
@@ -139,12 +177,10 @@ public class QuestActivity extends AppCompatActivity {
         }
     }
 
-    // "쓰레기 줍기" 퀘스트 진행 상황 업데이트
     private void updateTrashQuestProgress() {
         trashQuestCount++;
         String updatedText = "쓰레기 줍기 (" + trashQuestCount + "/3)";
 
-        // 업데이트된 텍스트로 변경
         if (quest1.getText().toString().contains("쓰레기 줍기")) {
             quest1.setText(updatedText);
         } else if (quest2.getText().toString().contains("쓰레기 줍기")) {
@@ -154,7 +190,6 @@ public class QuestActivity extends AppCompatActivity {
         }
 
         if (trashQuestCount == 3) {
-            // 카운트가 3에 도달하면 취소선 적용
             if (quest1.getText().toString().contains("쓰레기 줍기")) {
                 quest1.setPaintFlags(quest1.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
             } else if (quest2.getText().toString().contains("쓰레기 줍기")) {
