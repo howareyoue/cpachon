@@ -2,7 +2,9 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:map="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#F5F5F5"
+    android:padding="16dp">
 
     <com.naver.maps.map.MapView
         android:id="@+id/maps_view"
@@ -13,7 +15,32 @@
         android:id="@+id/start_location"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="출발지" />
+        android:hint="출발지"
+        android:background="@drawable/edit_text_background"
+        android:padding="12dp"
+        android:layout_marginBottom="8dp"
+        android:layout_alignParentTop="true" />
+
+    <EditText
+        android:id="@+id/destination"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="목적지"
+        android:background="@drawable/edit_text_background"
+        android:padding="12dp"
+        android:layout_below="@id/start_location"
+        android:layout_marginBottom="8dp" />
+
+    <Button
+        android:id="@+id/btn_markers"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="마커 설정"
+        android:textColor="#FFFFFF"
+        android:backgroundTint="#4CAF50"
+        android:padding="12dp"
+        android:layout_below="@id/destination"
+        android:layout_marginTop="8dp" />
 
     <TextView
         android:id="@+id/tv_distance_time"
@@ -21,20 +48,10 @@
         android:layout_height="wrap_content"
         android:text="거리와 예상 시간이 여기에 표시됩니다."
         android:textSize="16sp"
+        android:textColor="#333333"
         android:padding="16dp"
-        android:layout_below="@id/btn_markers"/>
-
-    <EditText
-        android:id="@+id/destination"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="목적지"
-        android:layout_below="@id/start_location" />
-
-    <Button
-        android:id="@+id/btn_markers"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="마커 설정"
-        android:layout_below="@id/destination" />
+        android:background="#FFFFFF"
+        android:elevation="2dp"
+        android:layout_alignParentBottom="true"
+        android:layout_marginTop="8dp" />
 </RelativeLayout>
