@@ -1,35 +1,42 @@
-<?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".WalkActivity">
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:gravity="center">
 
     <Button
         android:id="@+id/connectButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Connect Bluetooth"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="50dp" />
+        android:text="Bluetooth 연결"
+        android:layout_gravity="center_horizontal" />
+
+    <Button
+        android:id="@+id/disconnectButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Bluetooth 연결 해제"
+        android:layout_gravity="center_horizontal" />
+
+    <TextView
+        android:id="@+id/sensorDataTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Sensor Data: N/A"
+        android:layout_gravity="center_horizontal" />
 
     <TextView
         android:id="@+id/stepsTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Steps: 0"
-        android:textSize="24sp"
-        android:layout_below="@id/connectButton"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="30dp" />
+        android:layout_gravity="center_horizontal" />
 
     <TextView
         android:id="@+id/caloriesTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Calories burned: 0"
-        android:textSize="24sp"
-        android:layout_below="@id/stepsTextView"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="30dp" />
-</RelativeLayout>
+        android:text="Calories burned: 0.0 kcal"
+        android:layout_gravity="center_horizontal" />
+</LinearLayout>
