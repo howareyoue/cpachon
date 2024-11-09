@@ -1,32 +1,38 @@
 package com.example.capchon;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
 import java.util.UUID;
 
 public class WalkActivity extends AppCompatActivity {
-
+    private static final int REQUEST_BLUETOOTH_PERMISSIONS = 3;
     private BluetoothAdapter bluetoothAdapter;
     private BluetoothSocket bluetoothSocket;
     private InputStream inputStream;
-    private TextView stepsTextView, caloriesTextView, sensorDataTextView;
-    private Button connectButton, disconnectButton;
-    private static final double CALORIES_PER_STEP = 0.04; // 걸음당 칼로리 소모량
-    private int stepCount = 0;
-    private float previousX = 0; // 이전 x축 값
+    private TextView stepsTextView;
+    private TextView caloriesTextView;
+    private Button connectButton;
+    private static final double CALORIES_PER_STEP = 0.04; // 걸음 당 소모 칼로리
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -36,33 +42,66 @@ public class WalkActivity extends AppCompatActivity {
 
         stepsTextView = findViewById(R.id.stepsTextView);
         caloriesTextView = findViewById(R.id.caloriesTextView);
-        sensorDataTextView = findViewById(R.id.sensorDataTextView);
         connectButton = findViewById(R.id.connectButton);
-        disconnectButton = findViewById(R.id.disconnectButton);
 
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-
         connectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                connectToBluetoothDevice("HC-06"); // HC-06 장치와 연결
-            }
-        });
-
-        disconnectButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                disconnectBluetooth();
+                if (checkBluetoothPermissions()) {
+                    connectToBluetoothDevice("CAPSTONE");
+                }
             }
         });
     }
 
+    private boolean checkBluetoothPermissions() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.BLUETOOTH_CONNECT,
+                            Manifest.permission.BLUETOOTH_SCAN,
+                            Manifest.permission.ACCESS_FINE_LOCATION},
+                    REQUEST_BLUETOOTH_PERMISSIONS);
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_BLUETOOTH_PERMISSIONS) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                connectToBluetoothDevice("CAPSTONE");
+            } else {
+                Toast.makeText(this, "Bluetooth 권한이 필요합니다.", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
     private void connectToBluetoothDevice(String deviceName) {
-        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.BLUETOOTH_CONNECT}, 1);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.BLUETOOTH_CONNECT},
+                    REQUEST_BLUETOOTH_PERMISSIONS);
             return;
         }
-        Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
+
+        if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
+            Toast.makeText(this, "Bluetooth가 비활성화되어 있습니다. Bluetooth를 활성화해주세요.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Set<BluetoothDevice> pairedDevices;
+        try {
+            pairedDevices = bluetoothAdapter.getBondedDevices();
+        } catch (SecurityException e) {
+            Log.e("WalkActivity", "Bluetooth permission not granted for getBondedDevices", e);
+            return;
+        }
+
         if (pairedDevices.size() > 0) {
             for (BluetoothDevice device : pairedDevices) {
                 if (device.getName().equals(deviceName)) {
@@ -71,78 +110,57 @@ public class WalkActivity extends AppCompatActivity {
                                 UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"));
                         bluetoothSocket.connect();
                         inputStream = bluetoothSocket.getInputStream();
-                        readFromBluetooth();
-                        Toast.makeText(WalkActivity.this, "Bluetooth 연결 성공", Toast.LENGTH_SHORT).show();
-                        return;
+                        Toast.makeText(this, "Bluetooth 장치에 연결되었습니다.", Toast.LENGTH_LONG).show();
+                        new Thread(this::readFromBluetooth).start();
+                        break;
                     } catch (IOException e) {
                         e.printStackTrace();
-                        Toast.makeText(WalkActivity.this, "Bluetooth 연결 실패", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Bluetooth 장치 연결 실패", Toast.LENGTH_LONG).show();
+                    } catch (SecurityException e) {
+                        Log.e("WalkActivity", "Bluetooth permission not granted for createRfcommSocket", e);
+                        Toast.makeText(this, "Bluetooth 권한이 필요합니다.", Toast.LENGTH_LONG).show();
                     }
                 }
             }
         } else {
-            Toast.makeText(WalkActivity.this, "페어링된 장치가 없습니다.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "연결된 Bluetooth 장치가 없습니다.", Toast.LENGTH_SHORT).show();
         }
     }
 
-    private void disconnectBluetooth() {
+    private void readFromBluetooth() {
+        byte[] buffer = new byte[1024];
+        int bytes;
         try {
-            if (inputStream != null) inputStream.close();
-            if (bluetoothSocket != null) bluetoothSocket.close();
-            Toast.makeText(WalkActivity.this, "Bluetooth 연결 해제", Toast.LENGTH_SHORT).show();
+            while (true) {
+                if (inputStream != null && (bytes = inputStream.read(buffer)) > 0) {
+                    String readMessage = new String(buffer, 0, bytes).trim();
+                    int steps = Integer.parseInt(readMessage);
+                    double calories = calculateCalories(steps);
+                    Handler handler = new Handler(Looper.getMainLooper());
+                    handler.post(() -> {
+                        stepsTextView.setText("걸음 수: " + steps);
+                        caloriesTextView.setText(String.format("소모된 칼로리: %.2f kcal", calories));
+                    });
+                }
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private void readFromBluetooth() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                byte[] buffer = new byte[1024];
-                int bytes;
-                while (true) {
-                    try {
-                        if (inputStream.available() > 0) {
-                            bytes = inputStream.read(buffer);
-                            final String readMessage = new String(buffer, 0, bytes);
-                            updateSensorData(readMessage);
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        break;
-                    }
-                }
-            }
-        }).start();
-    }
-
-    private void updateSensorData(String data) {
-        String[] values = data.split(",");
-        if (values.length > 0) {
-            try {
-                float x = Float.parseFloat(values[0].trim());
-                incrementStepsIfNeeded(x);
-                runOnUiThread(() -> sensorDataTextView.setText("Sensor Data: " + data));
-            } catch (NumberFormatException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    private void incrementStepsIfNeeded(float x) {
-        if (Math.abs(x - previousX) > 0.5) { // x축의 변동이 일정 값 이상일 때
-            stepCount++;
-            previousX = x;
-            final double calories = calculateCalories(stepCount);
-            runOnUiThread(() -> {
-                stepsTextView.setText("Steps: " + stepCount);
-                caloriesTextView.setText(String.format("Calories burned: %.2f kcal", calories));
-            });
-        }
-    }
-
     private double calculateCalories(int steps) {
         return steps * CALORIES_PER_STEP;
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        try {
+            if (bluetoothSocket != null) {
+                bluetoothSocket.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
