@@ -20,23 +20,30 @@
         android:layout_gravity="center_horizontal" />
 
     <TextView
-        android:id="@+id/sensorDataTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Sensor Data: N/A"
-        android:layout_gravity="center_horizontal" />
-
-    <TextView
         android:id="@+id/stepsTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Steps: 0"
+        android:text="걸음 수: 0"
+        android:textSize="18sp"
+        android:layout_marginTop="20dp"
         android:layout_gravity="center_horizontal" />
 
     <TextView
         android:id="@+id/caloriesTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Calories burned: 0.0 kcal"
+        android:text="소모된 칼로리: 0 kcal"
+        android:textSize="18sp"
+        android:layout_marginTop="20dp"
         android:layout_gravity="center_horizontal" />
+
+    <TextView
+        android:id="@+id/sensorDataTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="센서 데이터: "
+        android:textSize="18sp"
+        android:layout_marginTop="20dp"
+        android:layout_gravity="center_horizontal" />
+
 </LinearLayout>
