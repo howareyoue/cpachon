@@ -180,19 +180,21 @@ public class WalkActivity extends AppCompatActivity {
                             if (!completeData.isEmpty()) {
                                 try {
                                     String[] dataParts = completeData.split(",");
-                                    int steps = Integer.parseInt(dataParts[0].trim());
-                                    double calories = calculateCalories(steps);
+                                    if (dataParts.length >= 2) {
+                                        int steps = Integer.parseInt(dataParts[0].trim());
+                                        double calories = Double.parseDouble(dataParts[1].trim());
 
-                                    // 로그로 파싱된 값을 확인
-                                    Log.d("WalkActivity", "Parsed Steps: " + steps + ", Calories: " + calories);
+                                        // 로그로 파싱된 값을 확인
+                                        Log.d("WalkActivity", "Parsed Steps: " + steps + ", Calories: " + calories);
 
-                                    // UI 업데이트는 메인 스레드에서 실행
-                                    Handler handler = new Handler(Looper.getMainLooper());
-                                    handler.post(() -> {
-                                        stepsTextView.setText("걸음 수: " + steps);
-                                        caloriesTextView.setText(String.format("소모된 칼로리: %.2f kcal", calories));
-                                        sensorDataTextView.setText("센서 데이터: " + completeData); // 추가된 센서 데이터 표시
-                                    });
+                                        // UI 업데이트는 메인 스레드에서 실행
+                                        Handler handler = new Handler(Looper.getMainLooper());
+                                        handler.post(() -> {
+                                            stepsTextView.setText("걸음 수: " + steps);
+                                            caloriesTextView.setText(String.format("소모된 칼로리: %.2f kcal", calories));
+                                            sensorDataTextView.setText("센서 데이터: " + completeData); // 추가된 센서 데이터 표시
+                                        });
+                                    }
                                 } catch (Exception e) {
                                     e.printStackTrace();
                                 }
