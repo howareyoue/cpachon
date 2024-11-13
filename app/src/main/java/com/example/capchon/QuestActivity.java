@@ -204,19 +204,21 @@ public class QuestActivity extends AppCompatActivity {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
 
+        // 쓰레기 줍기 퀘스트 완료 처리
         if (trashQuestText != null && recognizedQuest.equals("쓰레기 줍기")) {
             updateTrashQuestProgress();
-            editor.putBoolean(QUEST_COMPLETED_PREFIX + "쓰레기 줍기", true);
+            editor.putString(QUEST_COMPLETED_PREFIX + "쓰레기 줍기", "true");
         } else {
+            // 다른 퀘스트 완료 처리
             if (quest1.getText().toString().equals(recognizedQuest)) {
                 quest1.setPaintFlags(quest1.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
-                editor.putBoolean(QUEST_COMPLETED_PREFIX + quest1.getText().toString(), true);
+                editor.putString(QUEST_COMPLETED_PREFIX + quest1.getText().toString(), "true");
             } else if (quest2.getText().toString().equals(recognizedQuest)) {
                 quest2.setPaintFlags(quest2.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
-                editor.putBoolean(QUEST_COMPLETED_PREFIX + quest2.getText().toString(), true);
+                editor.putString(QUEST_COMPLETED_PREFIX + quest2.getText().toString(), "true");
             } else if (quest3.getText().toString().equals(recognizedQuest)) {
                 quest3.setPaintFlags(quest3.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
-                editor.putBoolean(QUEST_COMPLETED_PREFIX + quest3.getText().toString(), true);
+                editor.putString(QUEST_COMPLETED_PREFIX + quest3.getText().toString(), "true");
             }
         }
         editor.apply();
@@ -240,21 +242,22 @@ public class QuestActivity extends AppCompatActivity {
             }
         }
 
-        // Save the updated trash count
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        prefs.edit().putInt(TRASH_COUNT, trashQuestCount).apply();
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putInt(TRASH_COUNT, trashQuestCount);
+        editor.apply();
     }
 
     private void applyStrikethroughForCompletedQuests() {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        if (prefs.getBoolean(QUEST_COMPLETED_PREFIX + quest1.getText().toString(), false)) {
-            quest1.setPaintFlags(quest1.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
-        }
-        if (prefs.getBoolean(QUEST_COMPLETED_PREFIX + quest2.getText().toString(), false)) {
-            quest2.setPaintFlags(quest2.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
-        }
-        if (prefs.getBoolean(QUEST_COMPLETED_PREFIX + quest3.getText().toString(), false)) {
-            quest3.setPaintFlags(quest3.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+        if (prefs.getString(QUEST_COMPLETED_PREFIX + "쓰레기 줍기", "").equals("true")) {
+            if (quest1.getText().toString().contains("쓰레기 줍기")) {
+                quest1.setPaintFlags(quest1.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+            } else if (quest2.getText().toString().contains("쓰레기 줍기")) {
+                quest2.setPaintFlags(quest2.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+            } else if (quest3.getText().toString().contains("쓰레기 줍기")) {
+                quest3.setPaintFlags(quest3.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+            }
         }
     }
 }
