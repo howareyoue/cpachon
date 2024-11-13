@@ -58,7 +58,7 @@ public class WalkActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 if (checkPermissions()) {
-                    connectToBluetoothDevice("CAPSTONE");
+                    connectToBluetoothDevice(" CAPSTONE");
                 }
             }
         });
@@ -90,7 +90,7 @@ public class WalkActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_LOCATION_PERMISSION || requestCode == REQUEST_BLUETOOTH_PERMISSION) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                connectToBluetoothDevice("CAPSTONE");
+                connectToBluetoothDevice(" CAPSTONE");
             } else {
                 Toast.makeText(this, "Bluetooth 및 위치 권한이 필요합니다.", Toast.LENGTH_SHORT).show();
                 Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
@@ -173,38 +173,40 @@ public class WalkActivity extends AppCompatActivity {
         try {
             while (bluetoothSocket != null && bluetoothSocket.isConnected()) {
                 if (inputStream != null) {
+                    // 데이터를 읽고 문자열로 변환
                     bytes = inputStream.read(buffer);
                     if (bytes > 0) {
                         String readMessage = new String(buffer, 0, bytes);
-                        Log.d("WalkActivity", "Received Data: " + readMessage); // 받은 데이터를 로그로 출력
+                        Log.d("WalkActivity", "Received Data: " + readMessage);
                         dataBuffer.append(readMessage);
 
-                        // 일정 크기 이상 데이터가 쌓일 때 처리
+                        // '\n'을 포함할 때까지 데이터가 누적될 때만 처리
                         int endOfLineIndex = dataBuffer.indexOf("\n");
                         while (endOfLineIndex != -1) {
+                            // 한 줄을 잘라내어 전체 데이터가 끝날 때마다 출력
                             String completeData = dataBuffer.substring(0, endOfLineIndex).trim();
                             dataBuffer.delete(0, endOfLineIndex + 1);
 
                             if (!completeData.isEmpty()) {
                                 try {
+                                    // 예상되는 데이터 포맷 확인 및 파싱
                                     String[] dataParts = completeData.split(",");
                                     if (dataParts.length >= 2) {
                                         int steps = Integer.parseInt(dataParts[0].trim());
                                         double calories = Double.parseDouble(dataParts[1].trim());
 
-                                        // 로그로 파싱된 값을 확인
                                         Log.d("WalkActivity", "Parsed Steps: " + steps + ", Calories: " + calories);
 
-                                        // UI 업데이트는 메인 스레드에서 실행
+                                        // 메인 스레드에서 UI 업데이트 실행
                                         Handler handler = new Handler(Looper.getMainLooper());
                                         handler.post(() -> {
                                             stepsTextView.setText("걸음 수: " + steps);
                                             caloriesTextView.setText(String.format("소모된 칼로리: %.2f kcal", calories));
-                                            sensorDataTextView.setText("센서 데이터: " + completeData); // 추가된 센서 데이터 표시
+                                            sensorDataTextView.setText("센서 데이터: " + completeData);
                                         });
                                     }
                                 } catch (Exception e) {
-                                    e.printStackTrace();
+                                    Log.e("WalkActivity", "Data parsing error", e);
                                 }
                             }
                             endOfLineIndex = dataBuffer.indexOf("\n");
@@ -213,9 +215,10 @@ public class WalkActivity extends AppCompatActivity {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.e("WalkActivity", "Error reading Bluetooth data", e);
         }
     }
+
 
     private double calculateCalories(int steps) {
         return steps * CALORIES_PER_STEP;
