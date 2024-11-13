@@ -103,6 +103,7 @@ public class WalkActivity extends AppCompatActivity {
     private void connectToBluetoothDevice(String deviceName) {
         if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
             Toast.makeText(this, "Bluetooth가 비활성화되어 있습니다. Bluetooth를 활성화해주세요.", Toast.LENGTH_SHORT).show();
+            Log.d("WalkActivity", "Bluetooth is disabled.");
             return;
         }
 
@@ -110,6 +111,7 @@ public class WalkActivity extends AppCompatActivity {
         try {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
                 pairedDevices = bluetoothAdapter.getBondedDevices();
+                Log.d("WalkActivity", "Paired devices found: " + pairedDevices.size());
             } else {
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BLUETOOTH_CONNECT}, REQUEST_BLUETOOTH_PERMISSION);
                 return;
@@ -121,25 +123,31 @@ public class WalkActivity extends AppCompatActivity {
 
         if (pairedDevices.size() > 0) {
             for (BluetoothDevice device : pairedDevices) {
+                Log.d("WalkActivity", "Checking device: " + device.getName());
                 if (device.getName().equals(deviceName)) {
+                    Log.d("WalkActivity", "Device matched: " + device.getName());
                     try {
                         bluetoothSocket = device.createRfcommSocketToServiceRecord(
                                 UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"));
+                        Log.d("WalkActivity", "Attempting to connect to Bluetooth device...");
                         bluetoothSocket.connect();
                         inputStream = bluetoothSocket.getInputStream();
                         Toast.makeText(this, "Bluetooth 장치에 연결되었습니다.", Toast.LENGTH_LONG).show();
+                        Log.d("WalkActivity", "Bluetooth connection successful.");
                         new Thread(this::readFromBluetooth).start();
                         break;
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        Log.e("WalkActivity", "Failed to connect to Bluetooth device", e);
                         Toast.makeText(this, "Bluetooth 장치 연결 실패", Toast.LENGTH_LONG).show();
                     }
                 }
             }
         } else {
+            Log.d("WalkActivity", "No paired Bluetooth devices found.");
             Toast.makeText(this, "연결된 Bluetooth 장치가 없습니다.", Toast.LENGTH_SHORT).show();
         }
     }
+
 
     private void disconnectBluetooth() {
         if (bluetoothSocket != null) {
