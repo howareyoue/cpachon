@@ -3,10 +3,13 @@ package com.example.capchon;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.content.Context;
 import android.content.pm.PackageManager;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -17,22 +20,23 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Set;
 import java.util.UUID;
 
-public class WalkActivity extends AppCompatActivity {
+public class WalkActivity extends AppCompatActivity implements SensorEventListener {
     private static final String DEVICE_NAME = "CAPSTONE";
     private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private BluetoothAdapter bluetoothAdapter;
     private BluetoothSocket bluetoothSocket;
-    private InputStream inputStream;
-    private TextView stepsTextView, caloriesTextView, sensorDataTextView;
+    private TextView stepsTextView, caloriesTextView;
     private Button connectButton, disconnectButton;
     private int steps = 0;
     private double calories = 0.0;
     private static final double CALORIES_PER_STEP = 0.04;
     private static final int REQUEST_BLUETOOTH_PERMISSION = 1;
+    private SensorManager sensorManager;
+    private Sensor accelerometer;
+    private boolean isWalking = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,11 +45,13 @@ public class WalkActivity extends AppCompatActivity {
 
         stepsTextView = findViewById(R.id.stepsTextView);
         caloriesTextView = findViewById(R.id.caloriesTextView);
-        sensorDataTextView = findViewById(R.id.sensorDataTextView);
         connectButton = findViewById(R.id.connectButton);
         disconnectButton = findViewById(R.id.disconnectButton);
 
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 
         connectButton.setOnClickListener(view -> connectToBluetoothDevice());
         disconnectButton.setOnClickListener(view -> disconnectBluetooth());
@@ -68,9 +74,7 @@ public class WalkActivity extends AppCompatActivity {
                 try {
                     bluetoothSocket = device.createRfcommSocketToServiceRecord(MY_UUID);
                     bluetoothSocket.connect();
-                    inputStream = bluetoothSocket.getInputStream();
                     Toast.makeText(this, "Bluetooth 연결 성공", Toast.LENGTH_SHORT).show();
-                    startReadingData();
                     break;
                 } catch (IOException e) {
                     Toast.makeText(this, "Bluetooth 연결 실패", Toast.LENGTH_SHORT).show();
@@ -85,7 +89,6 @@ public class WalkActivity extends AppCompatActivity {
             try {
                 bluetoothSocket.close();
                 bluetoothSocket = null;
-                inputStream = null;
                 Toast.makeText(this, "Bluetooth 연결 해제", Toast.LENGTH_SHORT).show();
             } catch (IOException e) {
                 Log.e("WalkActivity", "Bluetooth 연결 해제 오류", e);
@@ -93,39 +96,49 @@ public class WalkActivity extends AppCompatActivity {
         }
     }
 
-    private void startReadingData() {
-        Handler handler = new Handler(Looper.getMainLooper());
-        new Thread(() -> {
-            byte[] buffer = new byte[1024];
-            int bytes;
-            while (bluetoothSocket != null && bluetoothSocket.isConnected()) {
-                try {
-                    bytes = inputStream.read(buffer);
-                    if (bytes > 0) {
-                        String data = new String(buffer, 0, bytes).trim();
-                        String[] dataParts = data.split(",");
-                        if (dataParts.length == 2) {
-                            try {
-                                steps = Integer.parseInt(dataParts[0].trim());
-                                calories = Double.parseDouble(dataParts[1].trim());
-                                handler.post(this::updateUI);
-                            } catch (NumberFormatException e) {
-                                Log.e("WalkActivity", "데이터 파싱 오류", e);
-                            }
-                        }
-                    }
-                    Thread.sleep(3000);
-                } catch (IOException | InterruptedException e) {
-                    Log.e("WalkActivity", "데이터 읽기 오류", e);
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (accelerometer != null) {
+            sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        sensorManager.unregisterListener(this);
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            float x = event.values[0];
+            float y = event.values[1];
+            float z = event.values[2];
+
+            double acceleration = Math.sqrt(x * x + y * y + z * z);
+            if (acceleration > 12) {  // 움직임 감지 기준 값, 필요시 조정 가능
+                if (!isWalking) {
+                    isWalking = true;
+                    steps++;
+                    calories = steps * CALORIES_PER_STEP;
+                    updateUI();
                 }
+            } else {
+                isWalking = false;
             }
-        }).start();
+        }
     }
 
     private void updateUI() {
         stepsTextView.setText("걸음 수: " + steps);
         caloriesTextView.setText(String.format("소모된 칼로리: %.2f kcal", calories));
-        sensorDataTextView.setText("센서 데이터: " + steps + ", " + calories);
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+        // 정확도 변화는 필요시 처리
     }
 
     @Override
